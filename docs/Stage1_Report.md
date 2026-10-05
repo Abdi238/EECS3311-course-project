@@ -2,7 +2,7 @@
 
 EECS3311 Fall 2026, Course Project Stage 1 Design Report
 
-Author: [Your Name], [Student #] (solo project)
+Author: Mohamed Abdi , 218945246 
 
 ## Contents
 
