@@ -2,7 +2,7 @@
 
 EECS3311 Fall 2026, Course Project Stage 1 Design Report
 
-Author: Mohamed Abdi , 218945246 
+Author: Mohamed Abdi, 218945246 (solo project)
 
 ## Contents
 
@@ -48,7 +48,7 @@ I keep the exact parts deterministic. Totals, budget percentages, and the detect
 
 ### 1.5 AI Model
 
-I plan to use **Claude** (Anthropic Messages API), which supports tool calling. One model is used for all AI features, with the model name set in a config file so it can be changed without code changes.
+I plan to use **Claude** (Anthropic Messages API), which supports tool calling. One model is used for all AI features to keep the setup simple. A cheaper, faster model could handle bulk tasks like categorization, but at this project's scale the cost difference is small, so one model is easier. The model name is set in a config file, so it can be changed without code changes.
 
 The LLM is accessed through an `LLMClient` interface. `ClaudeAdapter` is the real implementation, and `MockLlmClient` returns scripted responses for unit tests and offline demos. The API is paid per use (separate from a Claude app subscription), so I'll develop and test mostly with the mock and only use the real API for integration testing and the demo, with a spending limit set in the Claude Console. If no API key is configured, the app still runs: categorization uses rules only and the AI features show an "assistant offline" message.
 
@@ -244,7 +244,7 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 
 ## 3. Class Diagram
 
-The class diagram is split into three views so each one is readable: the presentation layer and facade, the core logic (services and agent), and the domain model with persistence. There are 42 classes in total. To keep the diagrams readable, each class shows its main attributes and methods rather than every getter and helper. Class and method names match the sequence diagrams and the traceability table.
+The class diagram is split into three views so each one is readable: the presentation layer and facade, the core logic (services and agent), and the domain model with persistence. To keep the diagrams readable, each class shows its main attributes and methods rather than every getter and helper. Class and method names match the sequence diagrams and the traceability table.
 
 ### 3.1 Presentation and Facade
 
@@ -314,11 +314,11 @@ classDiagram
     }
 
     MainApp --> BudgetBuddyFacade
-    MainApp *-- DashboardController
-    MainApp *-- TransactionsController
-    MainApp *-- BudgetsGoalsController
-    MainApp *-- InsightsController
-    MainApp *-- ChatController
+    MainApp ..> DashboardController : loads
+    MainApp ..> TransactionsController : loads
+    MainApp ..> BudgetsGoalsController : loads
+    MainApp ..> InsightsController : loads
+    MainApp ..> ChatController : loads
     DashboardController --> BudgetBuddyFacade
     TransactionsController --> BudgetBuddyFacade
     BudgetsGoalsController --> BudgetBuddyFacade
@@ -329,7 +329,7 @@ classDiagram
     BudgetAlertListener <|.. BudgetBuddyCli
 ```
 
-Notes: `BudgetBuddyFacade.create()` is static. It creates the repositories, services, and agent, and picks the AI categorization strategy if an API key is given, otherwise rules only. Each GUI controller holds a reference to the facade and has a matching FXML view (not drawn). Each `BudgetBuddyCli` method is a picocli subcommand. Only three are shown, and the rest follow the CLI table in Section 1.8.
+Notes: `BudgetBuddyFacade.create()` is static. It creates the repositories, services, and agent, and picks the AI categorization strategy if an API key is given, otherwise rules only. JavaFX's FXMLLoader creates each controller from its FXML view (not drawn), and `MainApp` then passes the facade to it through a `setFacade()` method (not drawn). Each `BudgetBuddyCli` method is a picocli subcommand. Only three are shown, and the rest follow the CLI table in Section 1.8.
 
 ### 3.2 Services and Agent
 
@@ -569,13 +569,13 @@ classDiagram
     GoalRepository ..> SavingsGoal
 ```
 
-Notes: `Budget.spent` is filled in by `BudgetService.recalculate()`, and `lastAlertPercent` (0, 80, or 100) stores the last alert sent so the same alert isn't repeated. `MonthlySummary.categoryTotals` maps each category to the amount spent. Each repository talks to the SQLite file through JDBC.
+Notes: `Budget.spent` is calculated by `BudgetService.recalculate()` and is not saved to the database. `lastAlertPercent` (0, 80, or 100) is saved, so the same alert isn't repeated. `MonthlySummary.categoryTotals` maps each category to the amount spent. Each repository talks to the SQLite file through JDBC.
 
 ---
 
 ## 4. Design Patterns
 
-I use six patterns. Five are the core ones, and MVC is a sixth in case one is not accepted.
+Budget Buddy uses six design patterns. Each one solves a specific problem in this project.
 
 | Pattern | Where | Problem it solves |
 |---|---|---|
@@ -855,7 +855,7 @@ Every import includes categorization (UC02). Imports, corrections, and budget ch
 
 ## 7. Sequence Diagrams
 
-Six diagrams cover all 11 features. Each one shows the main success path and the most important error or alternative case. Each one shows the main success path and the most important error or alternative case. Every feature can be started from the GUI or the CLI, and both call the same `BudgetBuddyFacade` method, so most diagrams show the GUI path only. SD05 shows both entry points as an example.
+Six diagrams cover all 11 features. Each one shows the main success path and the most important error or alternative case. Every feature can be started from the GUI or the CLI, and both call the same `BudgetBuddyFacade` method, so most diagrams show the GUI path only. SD05 shows both entry points as an example.
 
 | SD | Title | Features |
 |---|---|---|
