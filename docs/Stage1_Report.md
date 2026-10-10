@@ -2,7 +2,7 @@
 
 EECS3311 Fall 2026, Course Project Stage 1 Design Report
 
-Author: Mohamed Abdi, 218945246 (solo project)
+Author: Mohamed Abdi, 218945246 
 
 ## Contents
 
@@ -137,8 +137,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** CSV file and its format.
 - **Output:** Saved transactions, a refreshed table, and a summary (imported, duplicates skipped, bad rows).
 - **AI involvement:** Deterministic. New transactions are then passed to F02.
-- **Workflow:** Read rows → convert each row to a `Transaction` → skip duplicates (same date, amount, and description) → categorize (F02) → save → recheck budgets (F05).
-- **Errors:** File can't be read: show an error. Columns don't match the chosen format: ask the user to pick another format. Bad rows (invalid date or amount): skip them and list them in the summary.
+- **Expected Workflow:** Read rows → convert each row to a `Transaction` → skip duplicates (same date, amount, and description) → categorize (F02) → save → recheck budgets (F05).
+- **Error/Alternative Cases:** File can't be read: show an error. Columns don't match the chosen format: ask the user to pick another format. Bad rows (invalid date or amount): skip them and list them in the summary.
 
 ### F02: AI Auto-Categorization
 
@@ -147,8 +147,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Uncategorized transactions, saved rules, the list of categories.
 - **Output:** Updated transactions with category, source, and confidence.
 - **AI involvement:** Hybrid (rules first, LLM for the rest).
-- **Workflow:** Apply rules → send unmatched transactions to the LLM in batches, with the allowed categories and the user's rules as examples → read the JSON reply → apply results with confidence 0.6 or higher, flag the rest → save.
-- **Errors:** No API key or no connection: use rules only and tell the user. Invalid reply or unknown category: leave those transactions uncategorized. Categories set by the user are never overwritten.
+- **Expected Workflow:** Apply rules → send unmatched transactions to the LLM in batches, with the allowed categories and the user's rules as examples → read the JSON reply → apply results with confidence 0.6 or higher, flag the rest → save.
+- **Error/Alternative Cases:** No API key or no connection: use rules only and tell the user. Invalid reply or unknown category: leave those transactions uncategorized. Categories set by the user are never overwritten.
 
 ### F03: Category Correction and Learning
 
@@ -157,8 +157,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Transaction, new category, remember flag.
 - **Output:** Updated transaction, optional new rule, refreshed budgets.
 - **AI involvement:** Hybrid. The correction itself is deterministic, but saved rules are fed into the AI categorization prompt.
-- **Workflow:** Update the transaction (source = user) → if remember, save a rule and apply it to other transactions from that merchant that weren't set by the user → recheck budgets.
-- **Errors:** Transaction not found: show an error. A rule for that merchant already exists: ask before replacing it.
+- **Expected Workflow:** Update the transaction (source = user) → if remember, save a rule and apply it to other transactions from that merchant that weren't set by the user → recheck budgets.
+- **Error/Alternative Cases:** Transaction not found: show an error. A rule for that merchant already exists: ask before replacing it.
 
 ### F04: Budget Management
 
@@ -167,8 +167,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Month, category, amount.
 - **Output:** Saved budget and updated budget list.
 - **AI involvement:** Deterministic.
-- **Workflow:** Validate → create or update the budget → recheck budgets (F05) → refresh.
-- **Errors:** Amount is not a positive number: show a validation error. Budget already exists for that category and month: confirm before replacing.
+- **Expected Workflow:** Validate → create or update the budget → recheck budgets (F05) → refresh.
+- **Error/Alternative Cases:** Amount is not a positive number: show a validation error. Budget already exists for that category and month: confirm before replacing.
 
 ### F05: Budget Tracking and Alerts
 
@@ -177,8 +177,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Budgets and transactions for the month (runs automatically).
 - **Output:** Budget status per category and alerts.
 - **AI involvement:** Deterministic.
-- **Workflow:** After any import, correction, or budget change, total the month's spending per category → compare to each limit → if a budget reaches a new level, notify all listeners.
-- **Errors:** Category with spending but no budget: show "No budget set." Same level already alerted this month: don't alert again.
+- **Expected Workflow:** After any import, correction, or budget change, total the month's spending per category → compare to each limit → if a budget reaches a new level, notify all listeners.
+- **Error/Alternative Cases:** Category with spending but no budget: show "No budget set." Same level already alerted this month: don't alert again.
 
 ### F06: Spending Trends and Charts
 
@@ -187,8 +187,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Start and end month.
 - **Output:** Charts (GUI) or a text table (CLI).
 - **AI involvement:** Deterministic.
-- **Workflow:** Load transactions in the range → total expenses by month and category → display the monthly totals.
-- **Errors:** Start month after end month: validation error. No data in the range: show an empty state.
+- **Expected Workflow:** Load transactions in the range → total expenses by month and category → display the monthly totals.
+- **Error/Alternative Cases:** Start month after end month: validation error. No data in the range: show an empty state.
 
 ### F07: Recurring Payment Detection
 
@@ -197,8 +197,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** The last 6 months of transactions.
 - **Output:** List of recurring payments with name, amount, frequency, next expected date, and subscription flag.
 - **AI involvement:** Hybrid (Java detects, LLM labels).
-- **Workflow:** Group transactions by merchant → keep merchants with at least 3 charges at regular intervals and similar amounts → send them to the LLM for labels → display.
-- **Errors:** Less than 3 months of data: warn that results may be incomplete. LLM unavailable: show the list without labels.
+- **Expected Workflow:** Group transactions by merchant → keep merchants with at least 3 charges at regular intervals and similar amounts → send them to the LLM for labels → display.
+- **Error/Alternative Cases:** Less than 3 months of data: warn that results may be incomplete. LLM unavailable: show the list without labels.
 
 ### F08: Unusual Expense Detection
 
@@ -207,8 +207,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Selected month, with the previous 3 months as a baseline.
 - **Output:** List of flagged transactions with explanations.
 - **AI involvement:** Hybrid (Java flags, LLM explains).
-- **Workflow:** Work out the average for each category from the baseline months → flag transactions more than 3 times the category average, or over $200 at a new merchant → send flagged items to the LLM for explanations → display.
-- **Errors:** Not enough history: only use the new-merchant rule. Nothing flagged: show "Nothing unusual this month." LLM unavailable: show the reason Java found (for example, "3.4x category average").
+- **Expected Workflow:** Work out the average for each category from the baseline months → flag transactions more than 3 times the category average, or over $200 at a new merchant → send flagged items to the LLM for explanations → display.
+- **Error/Alternative Cases:** Not enough history: only use the new-merchant rule. Nothing flagged: show "Nothing unusual this month." LLM unavailable: show the reason Java found (for example, "3.4x category average").
 
 ### F09: Ask Budget Buddy
 
@@ -217,8 +217,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Question and recent conversation history.
 - **Output:** Answer text and the list of tools used.
 - **AI involvement:** AI (agent with tool calling). Tools available: `SpendingTool` (spending by category, biggest purchases, recurring payments), `BudgetTool` (budget progress), and `GoalsTool` (savings goals).
-- **Workflow:** Save the question to memory → send it to the LLM with the history and tool list → if the LLM asks for a tool, run it and send back the result → repeat until it answers or 6 steps are reached → show the answer.
-- **Errors:** Question isn't about personal finance, or asks for investment advice: the agent declines politely. Tool fails: the error is sent back to the LLM so it can try again or explain. Step limit reached: return a partial answer. API unavailable: show an offline message.
+- **Expected Workflow:** Save the question to memory → send it to the LLM with the history and tool list → if the LLM asks for a tool, run it and send back the result → repeat until it answers or 6 steps are reached → show the answer.
+- **Error/Alternative Cases:** Question isn't about personal finance, or asks for investment advice: the agent declines politely. Tool fails: the error is sent back to the LLM so it can try again or explain. Step limit reached: return a partial answer. API unavailable: show an offline message.
 
 ### F10: Monthly Summary
 
@@ -227,8 +227,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Month.
 - **Output:** Summary with stats and the written recap.
 - **AI involvement:** Hybrid (Java stats, LLM writing).
-- **Workflow:** Calculate the month's stats and budget results → send them to the LLM → show the stats with the recap.
-- **Errors:** No transactions that month: show an error. LLM unavailable: show the stats only.
+- **Expected Workflow:** Calculate the month's stats and budget results → send them to the LLM → show the stats with the recap.
+- **Error/Alternative Cases:** No transactions that month: show an error. LLM unavailable: show the stats only.
 
 ### F11: Savings Goals and AI Saving Plan
 
@@ -237,8 +237,8 @@ This is a solo project, so I kept the scope realistic: 11 features (one above th
 - **Input:** Goal details, contribution amounts, goal ID for a plan.
 - **Output:** Goal with progress bar, and a plan (monthly target, 3 to 5 suggestions, and whether it's realistic).
 - **AI involvement:** Hybrid. Goal tracking is deterministic, and the plan uses the same agent loop as F09.
-- **Workflow:** Save goal → on plan request, start the agent with a planning prompt → the LLM calls `SpendingTool` to look at recent spending and recurring payments → it returns a plan → display.
-- **Errors:** Target not positive or deadline in the past: validation error. Goal already reached: no plan needed. LLM unavailable: show only the required amount per month.
+- **Expected Workflow:** Save goal → on plan request, start the agent with a planning prompt → the LLM calls `SpendingTool` to look at recent spending and recurring payments → it returns a plan → display.
+- **Error/Alternative Cases:** Target not positive or deadline in the past: validation error. Goal already reached: no plan needed. LLM unavailable: show only the required amount per month.
 
 ---
 
