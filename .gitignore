@@ -15,3 +15,12 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+# Local secrets
+.env
+.env.*
+!.env.example
+config.local.json
+
+# Local database
+*.db
