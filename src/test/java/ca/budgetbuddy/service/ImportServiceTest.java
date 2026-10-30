@@ -74,11 +74,79 @@ class ImportServiceTest {
     }
 
     @Test
+    void importTdCsvReturnsValidRows() {
+        ImportResult result = importService.importFile(resource("csv/td-valid.csv"), "td");
+
+        List<Transaction> txs = result.getTransactions();
+        assertEquals(3, txs.size());
+        assertTrue(result.getErrors().isEmpty());
+
+        assertEquals(LocalDate.of(2026, 10, 1), txs.get(0).getDate());
+        assertEquals("Sample Grocery Store", txs.get(0).getMerchant());
+        assertEquals(new BigDecimal("54.21"), txs.get(0).getAmount());
+
+        assertEquals("Campus Coffee Shop", txs.get(1).getMerchant());
+        assertEquals(new BigDecimal("6.25"), txs.get(1).getAmount());
+
+        assertEquals("Payroll Deposit", txs.get(2).getMerchant());
+        assertEquals(new BigDecimal("1500.00"), txs.get(2).getAmount());
+    }
+
+    @Test
+    void importTdCsvSkipsBadRows() {
+        ImportResult result = importService.importFile(resource("csv/td-invalid-rows.csv"), "TD");
+
+        List<Transaction> txs = result.getTransactions();
+        assertEquals(2, txs.size());
+        assertEquals("Campus Bookstore", txs.get(0).getMerchant());
+        assertEquals("Community Gym", txs.get(1).getMerchant());
+
+        List<String> errors = result.getErrors();
+        assertEquals(2, errors.size());
+        assertEquals("Row 3: invalid date 'not-a-date'", errors.get(0));
+        assertEquals("Row 4: invalid amount 'abc'", errors.get(1));
+    }
+
+    @Test
+    void importRbcCsvReturnsValidRows() {
+        ImportResult result = importService.importFile(resource("csv/rbc-valid.csv"), "rbc");
+
+        List<Transaction> txs = result.getTransactions();
+        assertEquals(3, txs.size());
+        assertTrue(result.getErrors().isEmpty());
+
+        assertEquals(LocalDate.of(2026, 10, 1), txs.get(0).getDate());
+        assertEquals("Purchase Sample Grocery Store", txs.get(0).getMerchant());
+        assertEquals(new BigDecimal("-54.21"), txs.get(0).getAmount());
+
+        assertEquals("Purchase Campus Coffee Shop", txs.get(1).getMerchant());
+        assertEquals(new BigDecimal("-6.25"), txs.get(1).getAmount());
+
+        assertEquals("Deposit Payroll Deposit", txs.get(2).getMerchant());
+        assertEquals(new BigDecimal("1500.00"), txs.get(2).getAmount());
+    }
+
+    @Test
+    void importRbcCsvSkipsBadRows() {
+        ImportResult result = importService.importFile(resource("csv/rbc-invalid-rows.csv"), "RBC");
+
+        List<Transaction> txs = result.getTransactions();
+        assertEquals(2, txs.size());
+        assertEquals("Purchase Campus Bookstore", txs.get(0).getMerchant());
+        assertEquals("Purchase Community Gym", txs.get(1).getMerchant());
+
+        List<String> errors = result.getErrors();
+        assertEquals(2, errors.size());
+        assertEquals("Row 3: invalid date 'not-a-date'", errors.get(0));
+        assertEquals("Row 4: invalid amount 'abc'", errors.get(1));
+    }
+
+    @Test
     void importFileRejectsUnsupportedBankFormat() {
         Path file = resource("csv/generic-valid.csv");
         IllegalArgumentException thrown = assertThrows(
                 IllegalArgumentException.class,
-                () -> importService.importFile(file, "td")
+                () -> importService.importFile(file, "bmo")
         );
         assertTrue(thrown.getMessage().contains("Unsupported bank format"));
     }

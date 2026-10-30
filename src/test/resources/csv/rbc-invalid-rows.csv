@@ -1,0 +1,5 @@
+Account Type,Account Number,Transaction Date,Cheque Number,Description 1,Description 2,CAD$,USD$
+Chequing,XXXX,10/4/2026,,Purchase,Campus Bookstore,-22.00,
+Chequing,XXXX,not-a-date,,Purchase,Campus Cafe,-5.00,
+Chequing,XXXX,10/5/2026,,Purchase,Sample Pharmacy,abc,
+Chequing,XXXX,10/6/2026,,Purchase,Community Gym,-45.00,
