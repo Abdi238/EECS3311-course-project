@@ -2,6 +2,7 @@ package ca.budgetbuddy.service;
 
 import budgetbuddy.model.Category;
 import budgetbuddy.model.CategoryRule;
+import budgetbuddy.model.CategorySource;
 import budgetbuddy.model.Transaction;
 import budgetbuddy.persistence.CategoryRuleRepository;
 import budgetbuddy.persistence.TransactionRepository;
@@ -64,5 +65,38 @@ public class CategorizationService {
             }
         }
         return updated;
+    }
+
+    /**
+     * Sets a transaction's category as a user correction.
+     * If {@code remember} is true, saves a merchant rule and applies it to
+     * other transactions from that merchant that were not set by the user.
+     */
+    public Transaction correctCategory(long txId, Category category, boolean remember) {
+        Transaction tx = transactionRepository.findById(txId);
+        if (tx == null) {
+            throw new IllegalArgumentException("Transaction not found: " + txId);
+        }
+        tx.setCategory(category, CategorySource.USER, 1.0);
+        transactionRepository.update(tx);
+        if (remember) {
+            rememberMerchant(tx, category);
+        }
+        return tx;
+    }
+
+    private void rememberMerchant(Transaction corrected, Category category) {
+        ruleRepository.save(new CategoryRule(corrected.getMerchant(), category));
+        List<Transaction> sameMerchant = transactionRepository.findByMerchant(corrected.getMerchant());
+        for (Transaction other : sameMerchant) {
+            if (other.getId() == corrected.getId()) {
+                continue;
+            }
+            if (other.getSource() == CategorySource.USER) {
+                continue;
+            }
+            other.setCategory(category, CategorySource.RULE, 1.0);
+            transactionRepository.update(other);
+        }
     }
 }
