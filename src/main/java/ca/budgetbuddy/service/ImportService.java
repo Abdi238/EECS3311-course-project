@@ -1,6 +1,7 @@
 package ca.budgetbuddy.service;
 
 import budgetbuddy.model.Transaction;
+import budgetbuddy.persistence.TransactionRepository;
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 
@@ -30,6 +31,16 @@ public class ImportService {
     private static final DateTimeFormatter GENERIC_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
     private static final DateTimeFormatter BANK_DATE = DateTimeFormatter.ofPattern("M/d/yyyy");
 
+    private final TransactionRepository transactionRepository;
+
+    public ImportService() {
+        this(null);
+    }
+
+    public ImportService(TransactionRepository transactionRepository) {
+        this.transactionRepository = transactionRepository;
+    }
+
     public ImportResult importFile(Path file, String bank) {
         if (file == null) {
             throw new IllegalArgumentException("file must not be null");
@@ -57,23 +68,25 @@ public class ImportService {
     private ImportResult readCsv(Path file, RowParser parser) {
         List<Transaction> transactions = new ArrayList<>();
         List<String> errors = new ArrayList<>();
+        List<String> skippedDuplicates = new ArrayList<>();
         try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8);
              CSVReaderHeaderAware csv = new CSVReaderHeaderAware(reader)) {
             int rowNumber = 1;
             Map<String, String> row = csv.readMap();
             while (row != null) {
                 rowNumber++;
-                parser.parse(row, rowNumber, transactions, errors);
+                parser.parse(row, rowNumber, transactions, errors, skippedDuplicates);
                 row = csv.readMap();
             }
         } catch (IOException | CsvValidationException e) {
             throw new IllegalArgumentException("Could not read CSV file: " + file, e);
         }
-        return new ImportResult(transactions, errors);
+        return new ImportResult(transactions, errors, skippedDuplicates);
     }
 
     private void parseGenericRow(Map<String, String> row, int rowNumber,
-                                 List<Transaction> transactions, List<String> errors) {
+                                 List<Transaction> transactions, List<String> errors,
+                                 List<String> skippedDuplicates) {
         addTransaction(
                 rowNumber,
                 cell(row, "date"),
@@ -81,7 +94,8 @@ public class ImportService {
                 cell(row, "amount"),
                 GENERIC_DATE,
                 transactions,
-                errors
+                errors,
+                skippedDuplicates
         );
     }
 
@@ -91,7 +105,8 @@ public class ImportService {
      * Dates are month-first (M/d/yyyy).
      */
     private void parseTdRow(Map<String, String> row, int rowNumber,
-                            List<Transaction> transactions, List<String> errors) {
+                            List<Transaction> transactions, List<String> errors,
+                            List<String> skippedDuplicates) {
         String amountText = cell(row, "Withdrawals");
         if (amountText.isEmpty()) {
             amountText = cell(row, "Deposits");
@@ -103,7 +118,8 @@ public class ImportService {
                 amountText,
                 BANK_DATE,
                 transactions,
-                errors
+                errors,
+                skippedDuplicates
         );
     }
 
@@ -114,7 +130,8 @@ public class ImportService {
      * Dates are month-first (M/d/yyyy). Amount comes from CAD$, or USD$ if CAD$ is empty.
      */
     private void parseRbcRow(Map<String, String> row, int rowNumber,
-                             List<Transaction> transactions, List<String> errors) {
+                             List<Transaction> transactions, List<String> errors,
+                             List<String> skippedDuplicates) {
         String amountText = cell(row, "CAD$");
         if (amountText.isEmpty()) {
             amountText = cell(row, "USD$");
@@ -126,7 +143,8 @@ public class ImportService {
                 amountText,
                 BANK_DATE,
                 transactions,
-                errors
+                errors,
+                skippedDuplicates
         );
     }
 
@@ -144,7 +162,7 @@ public class ImportService {
 
     private void addTransaction(int rowNumber, String dateText, String merchant, String amountText,
                                 DateTimeFormatter dateFormat, List<Transaction> transactions,
-                                List<String> errors) {
+                                List<String> errors, List<String> skippedDuplicates) {
         LocalDate date = parseDate(dateText, dateFormat);
         if (date == null) {
             errors.add("Row " + rowNumber + ": invalid date '" + dateText + "'");
@@ -157,7 +175,38 @@ public class ImportService {
             return;
         }
 
-        transactions.add(new Transaction(date, merchant, amount));
+        Transaction tx = new Transaction(date, merchant, amount);
+        if (isDuplicate(tx, transactions)) {
+            skippedDuplicates.add("Row " + rowNumber + ": duplicate skipped");
+            return;
+        }
+        transactions.add(tx);
+    }
+
+    /**
+     * A duplicate has the same date, merchant, and amount as a row already
+     * in this import or already stored in the database.
+     */
+    private boolean isDuplicate(Transaction tx, List<Transaction> imported) {
+        for (Transaction existing : imported) {
+            if (sameDuplicateKey(existing, tx)) {
+                return true;
+            }
+        }
+        if (transactionRepository != null && transactionRepository.exists(tx)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean sameDuplicateKey(Transaction left, Transaction right) {
+        if (!left.getDate().equals(right.getDate())) {
+            return false;
+        }
+        if (!left.getMerchant().equals(right.getMerchant())) {
+            return false;
+        }
+        return left.getAmount().toPlainString().equals(right.getAmount().toPlainString());
     }
 
     private static String cell(Map<String, String> row, String column) {
@@ -199,6 +248,7 @@ public class ImportService {
     @FunctionalInterface
     private interface RowParser {
         void parse(Map<String, String> row, int rowNumber,
-                   List<Transaction> transactions, List<String> errors);
+                   List<Transaction> transactions, List<String> errors,
+                   List<String> skippedDuplicates);
     }
 }

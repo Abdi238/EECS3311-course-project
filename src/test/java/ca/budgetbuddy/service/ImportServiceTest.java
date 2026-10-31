@@ -1,6 +1,9 @@
 package ca.budgetbuddy.service;
 
 import budgetbuddy.model.Transaction;
+import budgetbuddy.persistence.Database;
+import budgetbuddy.persistence.SqliteTransactionRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,10 +21,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ImportServiceTest {
 
     private ImportService importService;
+    private Database database;
 
     @BeforeEach
     void setUp() {
         importService = new ImportService();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (database != null) {
+            database.close();
+        }
     }
 
     @Test
@@ -139,6 +150,35 @@ class ImportServiceTest {
         assertEquals(2, errors.size());
         assertEquals("Row 3: invalid date 'not-a-date'", errors.get(0));
         assertEquals("Row 4: invalid amount 'abc'", errors.get(1));
+    }
+
+    @Test
+    void importSkipsDuplicateRowsInTheSameFile() {
+        ImportResult result = importService.importFile(resource("csv/generic-duplicates.csv"), "generic");
+
+        assertEquals(2, result.getTransactions().size());
+        assertEquals("Sample Grocery Store", result.getTransactions().get(0).getMerchant());
+        assertEquals("Campus Coffee Shop", result.getTransactions().get(1).getMerchant());
+        assertEquals(1, result.getSkippedDuplicates().size());
+        assertEquals("Row 3: duplicate skipped", result.getSkippedDuplicates().get(0));
+        assertTrue(result.getErrors().isEmpty());
+    }
+
+    @Test
+    void importSkipsRowsAlreadyStoredInTheDatabase() {
+        database = Database.inMemory();
+        SqliteTransactionRepository repository = new SqliteTransactionRepository(database);
+        ImportService importing = new ImportService(repository);
+
+        ImportResult first = importing.importFile(resource("csv/generic-valid.csv"), "generic");
+        repository.saveAll(first.getTransactions());
+
+        ImportResult second = importing.importFile(resource("csv/generic-valid.csv"), "generic");
+        assertTrue(second.getTransactions().isEmpty());
+        assertEquals(3, second.getSkippedDuplicates().size());
+        assertEquals("Row 2: duplicate skipped", second.getSkippedDuplicates().get(0));
+        assertEquals("Row 3: duplicate skipped", second.getSkippedDuplicates().get(1));
+        assertEquals("Row 4: duplicate skipped", second.getSkippedDuplicates().get(2));
     }
 
     @Test
