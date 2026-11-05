@@ -1,4 +1,4 @@
-package budgetbuddy.model;
+package ca.budgetbuddy.model;
 
 import org.junit.jupiter.api.Test;
 

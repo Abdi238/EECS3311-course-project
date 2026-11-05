@@ -1,4 +1,4 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
 /**
  * Wraps JDBC failures so repository interfaces stay free of SQLException.

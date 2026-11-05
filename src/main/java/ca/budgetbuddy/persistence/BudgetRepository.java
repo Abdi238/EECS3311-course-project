@@ -1,6 +1,6 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.Budget;
+import ca.budgetbuddy.model.Budget;
 
 import java.time.YearMonth;
 import java.util.List;

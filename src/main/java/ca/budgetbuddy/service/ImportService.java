@@ -1,7 +1,7 @@
 package ca.budgetbuddy.service;
 
-import budgetbuddy.model.Transaction;
-import budgetbuddy.persistence.TransactionRepository;
+import ca.budgetbuddy.model.Transaction;
+import ca.budgetbuddy.persistence.TransactionRepository;
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 

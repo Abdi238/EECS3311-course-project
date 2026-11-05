@@ -1,8 +1,8 @@
 package ca.budgetbuddy.service;
 
-import budgetbuddy.model.CategoryRule;
-import budgetbuddy.model.CategorySource;
-import budgetbuddy.model.Transaction;
+import ca.budgetbuddy.model.CategoryRule;
+import ca.budgetbuddy.model.CategorySource;
+import ca.budgetbuddy.model.Transaction;
 
 import java.util.List;
 

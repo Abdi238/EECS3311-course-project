@@ -1,6 +1,6 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.CategoryRule;
+import ca.budgetbuddy.model.CategoryRule;
 
 import java.util.List;
 

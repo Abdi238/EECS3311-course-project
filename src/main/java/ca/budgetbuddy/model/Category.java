@@ -1,4 +1,4 @@
-package budgetbuddy.model;
+package ca.budgetbuddy.model;
 
 /**
  * Spending and income categories used throughout Budget Buddy.

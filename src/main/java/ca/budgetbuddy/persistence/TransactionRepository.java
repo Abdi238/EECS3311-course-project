@@ -1,6 +1,6 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.Transaction;
+import ca.budgetbuddy.model.Transaction;
 
 import java.time.LocalDate;
 import java.util.List;

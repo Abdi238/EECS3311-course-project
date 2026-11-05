@@ -1,11 +1,11 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.Budget;
-import budgetbuddy.model.Category;
-import budgetbuddy.model.CategoryRule;
-import budgetbuddy.model.CategorySource;
-import budgetbuddy.model.SavingsGoal;
-import budgetbuddy.model.Transaction;
+import ca.budgetbuddy.model.Budget;
+import ca.budgetbuddy.model.Category;
+import ca.budgetbuddy.model.CategoryRule;
+import ca.budgetbuddy.model.CategorySource;
+import ca.budgetbuddy.model.SavingsGoal;
+import ca.budgetbuddy.model.Transaction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

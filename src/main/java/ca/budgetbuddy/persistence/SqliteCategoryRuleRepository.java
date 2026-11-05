@@ -1,7 +1,7 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.Category;
-import budgetbuddy.model.CategoryRule;
+import ca.budgetbuddy.model.Category;
+import ca.budgetbuddy.model.CategoryRule;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

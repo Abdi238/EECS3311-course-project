@@ -1,12 +1,12 @@
 package ca.budgetbuddy.service;
 
-import budgetbuddy.model.Category;
-import budgetbuddy.model.CategoryRule;
-import budgetbuddy.model.CategorySource;
-import budgetbuddy.model.Transaction;
-import budgetbuddy.persistence.Database;
-import budgetbuddy.persistence.SqliteCategoryRuleRepository;
-import budgetbuddy.persistence.SqliteTransactionRepository;
+import ca.budgetbuddy.model.Category;
+import ca.budgetbuddy.model.CategoryRule;
+import ca.budgetbuddy.model.CategorySource;
+import ca.budgetbuddy.model.Transaction;
+import ca.budgetbuddy.persistence.Database;
+import ca.budgetbuddy.persistence.SqliteCategoryRuleRepository;
+import ca.budgetbuddy.persistence.SqliteTransactionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

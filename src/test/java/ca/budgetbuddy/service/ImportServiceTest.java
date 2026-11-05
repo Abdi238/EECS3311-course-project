@@ -1,8 +1,8 @@
 package ca.budgetbuddy.service;
 
-import budgetbuddy.model.Transaction;
-import budgetbuddy.persistence.Database;
-import budgetbuddy.persistence.SqliteTransactionRepository;
+import ca.budgetbuddy.model.Transaction;
+import ca.budgetbuddy.persistence.Database;
+import ca.budgetbuddy.persistence.SqliteTransactionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

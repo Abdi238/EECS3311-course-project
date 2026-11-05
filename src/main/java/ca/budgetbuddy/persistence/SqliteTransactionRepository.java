@@ -1,8 +1,8 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.Category;
-import budgetbuddy.model.CategorySource;
-import budgetbuddy.model.Transaction;
+import ca.budgetbuddy.model.Category;
+import ca.budgetbuddy.model.CategorySource;
+import ca.budgetbuddy.model.Transaction;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

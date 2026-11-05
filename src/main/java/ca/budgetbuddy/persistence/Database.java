@@ -1,4 +1,4 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
 import java.io.IOException;
 import java.io.InputStream;

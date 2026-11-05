@@ -1,4 +1,4 @@
-package budgetbuddy.model;
+package ca.budgetbuddy.model;
 
 /**
  * Where a transaction's category came from.

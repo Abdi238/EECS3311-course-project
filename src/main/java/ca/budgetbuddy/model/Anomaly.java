@@ -1,4 +1,4 @@
-package budgetbuddy.model;
+package ca.budgetbuddy.model;
 
 import java.util.Objects;
 

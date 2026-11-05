@@ -1,6 +1,6 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.SavingsGoal;
+import ca.budgetbuddy.model.SavingsGoal;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
@@ -8,6 +8,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SqliteGoalRepository implements GoalRepository {
     private static final String INSERT = """
@@ -23,6 +25,11 @@ public class SqliteGoalRepository implements GoalRepository {
             SELECT id, name, target, saved, deadline
             FROM savings_goals
             WHERE id = ?
+            """;
+    private static final String FIND_ALL = """
+            SELECT id, name, target, saved, deadline
+            FROM savings_goals
+            ORDER BY id
             """;
 
     private final Database database;
@@ -61,6 +68,20 @@ public class SqliteGoalRepository implements GoalRepository {
             }
         } catch (SQLException e) {
             throw new PersistenceException("Could not find savings goal " + goalId, e);
+        }
+    }
+
+    @Override
+    public List<SavingsGoal> findAll() {
+        try (PreparedStatement statement = database.connection().prepareStatement(FIND_ALL);
+             ResultSet rs = statement.executeQuery()) {
+            List<SavingsGoal> goals = new ArrayList<>();
+            while (rs.next()) {
+                goals.add(map(rs));
+            }
+            return goals;
+        } catch (SQLException e) {
+            throw new PersistenceException("Could not list savings goals", e);
         }
     }
 

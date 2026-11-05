@@ -1,11 +1,11 @@
 package ca.budgetbuddy.service;
 
-import budgetbuddy.model.Category;
-import budgetbuddy.model.CategoryRule;
-import budgetbuddy.model.CategorySource;
-import budgetbuddy.model.Transaction;
-import budgetbuddy.persistence.CategoryRuleRepository;
-import budgetbuddy.persistence.TransactionRepository;
+import ca.budgetbuddy.model.Category;
+import ca.budgetbuddy.model.CategoryRule;
+import ca.budgetbuddy.model.CategorySource;
+import ca.budgetbuddy.model.Transaction;
+import ca.budgetbuddy.persistence.CategoryRuleRepository;
+import ca.budgetbuddy.persistence.TransactionRepository;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

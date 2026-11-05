@@ -1,7 +1,7 @@
-package budgetbuddy.persistence;
+package ca.budgetbuddy.persistence;
 
-import budgetbuddy.model.Budget;
-import budgetbuddy.model.Category;
+import ca.budgetbuddy.model.Budget;
+import ca.budgetbuddy.model.Category;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
