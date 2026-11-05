@@ -1,5 +1,6 @@
 package ca.budgetbuddy.llm;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,11 @@ class MockLlmClientTest {
             @Override
             public String getDescription() {
                 return "Looks up a fake grocery budget.";
+            }
+
+            @Override
+            public String execute(JsonNode args) {
+                return "{\"category\":\"Groceries\"}";
             }
         };
 
