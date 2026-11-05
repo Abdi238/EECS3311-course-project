@@ -132,6 +132,14 @@ public final class BudgetBuddyFacade implements AutoCloseable {
         return budgetRepository.save(new Budget(category, limit, month));
     }
 
+    public List<Transaction> getTransactions() {
+        return transactions.findBetween(LocalDate.of(1900, 1, 1), LocalDate.of(9999, 12, 31));
+    }
+
+    public List<SavingsGoal> getGoals() {
+        return goals.findAll();
+    }
+
     public List<Budget> getBudgets(YearMonth month) {
         Objects.requireNonNull(month, "month");
         List<Budget> found = budgetRepository.findByMonth(month);

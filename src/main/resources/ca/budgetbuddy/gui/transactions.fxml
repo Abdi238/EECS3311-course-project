@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ca.budgetbuddy.gui.TransactionsController"
+      spacing="8" style="-fx-padding: 12;">
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Bank"/>
+        <ComboBox fx:id="bankBox" prefWidth="140"/>
+        <Button text="Import" onAction="#onImport"/>
+        <Button text="Auto-Categorize" onAction="#onCategorize"/>
+    </HBox>
+    <Label text="Double-click a category to change it."/>
+    <TableView fx:id="transactionTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="dateColumn" text="Date" prefWidth="120"/>
+            <TableColumn fx:id="merchantColumn" text="Merchant" prefWidth="280"/>
+            <TableColumn fx:id="amountColumn" text="Amount" prefWidth="120"/>
+            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="160"/>
+        </columns>
+    </TableView>
+</VBox>

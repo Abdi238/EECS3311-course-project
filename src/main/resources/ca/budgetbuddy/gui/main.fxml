@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ca.budgetbuddy.gui.MainController">
+    <top>
+        <Label fx:id="banner" wrapText="true" maxWidth="Infinity" visible="false" managed="false"
+               style="-fx-background-color: #fde8c8; -fx-text-fill: #5c3b00; -fx-padding: 10; -fx-font-size: 14px;"/>
+    </top>
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <Tab text="Transactions">
+                    <fx:include fx:id="transactions" source="transactions.fxml"/>
+                </Tab>
+                <Tab text="Budgets &amp; Goals">
+                    <fx:include fx:id="budgetsGoals" source="budgets-goals.fxml"/>
+                </Tab>
+                <Tab text="Insights">
+                    <fx:include fx:id="insights" source="insights.fxml"/>
+                </Tab>
+                <Tab text="Ask">
+                    <fx:include fx:id="ask" source="ask.fxml"/>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>

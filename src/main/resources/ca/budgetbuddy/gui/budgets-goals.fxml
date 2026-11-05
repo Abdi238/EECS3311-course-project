@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ca.budgetbuddy.gui.BudgetsGoalsController"
+      spacing="10" style="-fx-padding: 12;">
+    <Label text="Save a budget" style="-fx-font-size: 14px;"/>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <ChoiceBox fx:id="budgetCategory" prefWidth="160"/>
+        <TextField fx:id="budgetAmount" promptText="Amount" prefWidth="120"/>
+        <TextField fx:id="budgetMonth" promptText="yyyy-MM" prefWidth="120"/>
+        <Button text="Save budget" onAction="#onSaveBudget"/>
+    </HBox>
+    <TableView fx:id="budgetTable" prefHeight="180" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="budgetMonthColumn" text="Month" prefWidth="120"/>
+            <TableColumn fx:id="budgetCategoryColumn" text="Category" prefWidth="180"/>
+            <TableColumn fx:id="budgetLimitColumn" text="Limit" prefWidth="120"/>
+            <TableColumn fx:id="budgetSpentColumn" text="Spent" prefWidth="120"/>
+        </columns>
+    </TableView>
+    <Label text="Savings goal" style="-fx-font-size: 14px;"/>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <TextField fx:id="goalName" promptText="Name" prefWidth="180"/>
+        <TextField fx:id="goalTarget" promptText="Target" prefWidth="120"/>
+        <TextField fx:id="goalDeadline" promptText="yyyy-MM-dd" prefWidth="140"/>
+        <Button text="Create goal" onAction="#onCreateGoal"/>
+    </HBox>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <ChoiceBox fx:id="contributionGoal" prefWidth="220"/>
+        <TextField fx:id="contributionAmount" promptText="Contribution" prefWidth="140"/>
+        <Button text="Add contribution" onAction="#onAddContribution"/>
+    </HBox>
+</VBox>
