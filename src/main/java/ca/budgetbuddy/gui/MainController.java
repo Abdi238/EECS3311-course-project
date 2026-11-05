@@ -20,8 +20,9 @@ public class MainController {
     private AskController askController;
 
     public void setFacade(BudgetBuddyFacade facade) {
-        transactionsController.setFacade(facade, this::showBanner);
-        budgetsGoalsController.setFacade(facade, this::showBanner);
+        GuiBudgetAlertListener alerts = new GuiBudgetAlertListener(this::showBanner);
+        transactionsController.setFacade(facade, this::showBanner, alerts);
+        budgetsGoalsController.setFacade(facade, this::showBanner, alerts);
         insightsController.setFacade(facade, this::showBanner);
         askController.setFacade(facade, this::showBanner);
     }

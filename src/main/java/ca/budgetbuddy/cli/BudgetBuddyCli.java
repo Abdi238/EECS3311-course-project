@@ -7,6 +7,7 @@ import ca.budgetbuddy.model.Category;
 import ca.budgetbuddy.model.MonthlySummary;
 import ca.budgetbuddy.model.SavingsGoal;
 import ca.budgetbuddy.model.Transaction;
+import ca.budgetbuddy.service.BudgetAlertListener;
 import ca.budgetbuddy.service.ImportResult;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -42,7 +43,7 @@ import java.util.concurrent.Callable;
                 BudgetBuddyCli.AskCommand.class
         }
 )
-public class BudgetBuddyCli implements Callable<Integer> {
+public class BudgetBuddyCli implements Callable<Integer>, BudgetAlertListener {
     @Option(names = "--db", defaultValue = "budgetbuddy.db", scope = ScopeType.INHERIT,
             description = "SQLite database file. Default: budgetbuddy.db")
     private Path db;
@@ -70,8 +71,14 @@ public class BudgetBuddyCli implements Callable<Integer> {
                 databasePath = Path.of("budgetbuddy.db");
             }
             facade = BudgetBuddyFacade.create(databasePath, configuredApiKey());
+            facade.addBudgetAlertListener(this);
         }
         return facade;
+    }
+
+    @Override
+    public void onBudgetAlert(String message) {
+        System.out.println(message);
     }
 
     private static String configuredApiKey() {
@@ -167,6 +174,10 @@ public class BudgetBuddyCli implements Callable<Integer> {
             return run(() -> {
                 int updated = parent.facade().categorizeUncategorized();
                 System.out.println("Categorized " + updated + " transaction(s).");
+                String notice = parent.facade().aiCategorizationNotice();
+                if (!notice.isBlank()) {
+                    System.out.println(notice);
+                }
                 return 0;
             });
         }

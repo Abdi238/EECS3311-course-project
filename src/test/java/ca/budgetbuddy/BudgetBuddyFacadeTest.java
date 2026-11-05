@@ -143,10 +143,16 @@ class BudgetBuddyFacadeTest {
         BudgetBuddyFacade offline = BudgetBuddyFacade.create(dbFile, "   ");
         try {
             assertEquals(BudgetBuddyFacade.ASSISTANT_OFFLINE, offline.ask("Any fake question"));
+            assertEquals(BudgetBuddyFacade.AI_CATEGORIZATION_OFFLINE, offline.aiCategorizationNotice());
             assertTrue(offline.getLastToolsUsed().isEmpty());
         } finally {
             offline.close();
         }
+    }
+
+    @Test
+    void mockClientEnablesAiCategorization() {
+        assertEquals("", facade.aiCategorizationNotice());
     }
 
     @Test

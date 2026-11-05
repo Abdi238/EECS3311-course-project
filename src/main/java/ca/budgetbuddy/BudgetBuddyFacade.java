@@ -25,6 +25,9 @@ import ca.budgetbuddy.persistence.SqliteCategoryRuleRepository;
 import ca.budgetbuddy.persistence.SqliteGoalRepository;
 import ca.budgetbuddy.persistence.SqliteTransactionRepository;
 import ca.budgetbuddy.persistence.TransactionRepository;
+import ca.budgetbuddy.service.AiAssistedStrategy;
+import ca.budgetbuddy.service.BudgetAlertListener;
+import ca.budgetbuddy.service.BudgetService;
 import ca.budgetbuddy.service.CategorizationService;
 import ca.budgetbuddy.service.ImportResult;
 import ca.budgetbuddy.service.ImportService;
@@ -46,15 +49,17 @@ import java.util.Objects;
  */
 public final class BudgetBuddyFacade implements AutoCloseable {
     public static final String ASSISTANT_OFFLINE = "assistant offline";
+    public static final String AI_CATEGORIZATION_OFFLINE = "AI categorization is offline";
 
     private final Database database;
     private final TransactionRepository transactions;
-    private final BudgetRepository budgetRepository;
     private final GoalRepository goals;
     private final ImportService importService;
     private final CategorizationService categorization;
     private final SpendingCalculator calculator;
+    private final BudgetService budgetService;
     private final BudgetBuddyAgent agent;
+    private final boolean aiCategorization;
 
     public static BudgetBuddyFacade create(Path dbPath, String apiKey) {
         Objects.requireNonNull(dbPath, "dbPath");
@@ -85,15 +90,19 @@ public final class BudgetBuddyFacade implements AutoCloseable {
     private BudgetBuddyFacade(Database database, LLMClient llm) {
         this.database = database;
         this.transactions = new SqliteTransactionRepository(database);
-        this.budgetRepository = new SqliteBudgetRepository(database);
+        BudgetRepository budgetRepository = new SqliteBudgetRepository(database);
         this.goals = new SqliteGoalRepository(database);
         CategoryRuleRepository rules = new SqliteCategoryRuleRepository(database);
         this.importService = new ImportService(transactions);
         this.categorization = new CategorizationService(rules, transactions, new RuleBasedStrategy());
         this.calculator = new SpendingCalculator(transactions);
+        this.budgetService = new BudgetService(budgetRepository, calculator);
         if (llm == null) {
             this.agent = null;
+            this.aiCategorization = false;
         } else {
+            this.categorization.setStrategy(new AiAssistedStrategy(llm));
+            this.aiCategorization = true;
             ToolRegistry registry = new ToolRegistry(List.of(
                     new SpendingTool(transactions),
                     new BudgetTool(budgetRepository, transactions),
@@ -103,33 +112,41 @@ public final class BudgetBuddyFacade implements AutoCloseable {
         }
     }
 
+    public void addBudgetAlertListener(BudgetAlertListener listener) {
+        budgetService.addListener(listener);
+    }
+
+    /**
+     * Blank when an API key was provided. Otherwise the fixed offline sentence.
+     */
+    public String aiCategorizationNotice() {
+        if (aiCategorization) {
+            return "";
+        }
+        return AI_CATEGORIZATION_OFFLINE;
+    }
+
     public ImportResult importTransactions(Path file, String bank) {
         ImportResult result = importService.importFile(file, bank);
         transactions.saveAll(result.getTransactions());
+        budgetService.recalculateFor(result.getTransactions());
         return result;
     }
 
     public int categorizeUncategorized() {
-        return categorization.categorizeUncategorized();
+        int updated = categorization.categorizeUncategorized();
+        budgetService.recalculateFor(getTransactions());
+        return updated;
     }
 
     public Transaction correctCategory(long txId, Category category, boolean remember) {
-        return categorization.correctCategory(txId, category, remember);
+        Transaction updated = categorization.correctCategory(txId, category, remember);
+        budgetService.recalculate(YearMonth.from(updated.getDate()));
+        return updated;
     }
 
     public Budget saveBudget(Category category, BigDecimal limit, YearMonth month) {
-        Objects.requireNonNull(category, "category");
-        Objects.requireNonNull(month, "month");
-        if (limit == null || limit.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("limit must be positive");
-        }
-        for (Budget existing : budgetRepository.findByMonth(month)) {
-            if (existing.getCategory() == category) {
-                existing.setLimit(limit);
-                return budgetRepository.save(existing);
-            }
-        }
-        return budgetRepository.save(new Budget(category, limit, month));
+        return budgetService.saveBudget(category, limit, month);
     }
 
     public List<Transaction> getTransactions() {
@@ -141,12 +158,7 @@ public final class BudgetBuddyFacade implements AutoCloseable {
     }
 
     public List<Budget> getBudgets(YearMonth month) {
-        Objects.requireNonNull(month, "month");
-        List<Budget> found = budgetRepository.findByMonth(month);
-        for (Budget budget : found) {
-            budget.setSpent(calculator.totalFor(month, budget.getCategory()));
-        }
-        return found;
+        return budgetService.getBudgets(month);
     }
 
     public List<MonthlySummary> getSpendingTrends(YearMonth from, YearMonth to) {

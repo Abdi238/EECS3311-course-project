@@ -40,6 +40,7 @@ public class TransactionsController {
     private BudgetBuddyFacade facade;
     private Consumer<String> banner = message -> {
     };
+    private GuiBudgetAlertListener alerts;
 
     @FXML
     private void initialize() {
@@ -66,9 +67,10 @@ public class TransactionsController {
         });
     }
 
-    public void setFacade(BudgetBuddyFacade facade, Consumer<String> banner) {
+    public void setFacade(BudgetBuddyFacade facade, Consumer<String> banner, GuiBudgetAlertListener alerts) {
         this.facade = facade;
         this.banner = banner;
+        this.alerts = alerts;
         reload();
     }
 
@@ -99,7 +101,7 @@ public class TransactionsController {
             return;
         }
         ImportResult result = facade.importTransactions(file.toPath(), bank);
-        banner.accept(TransactionsLogic.importMessage(result));
+        banner.accept(alerts.combine(TransactionsLogic.importMessage(result)));
         reload();
     }
 
@@ -108,7 +110,12 @@ public class TransactionsController {
             return;
         }
         int updated = facade.categorizeUncategorized();
-        banner.accept(TransactionsLogic.categorizeMessage(updated));
+        String message = TransactionsLogic.categorizeMessage(updated);
+        String notice = facade.aiCategorizationNotice();
+        if (!notice.isBlank()) {
+            message = message + " " + notice + ".";
+        }
+        banner.accept(alerts.combine(message));
         reload();
     }
 
@@ -142,8 +149,8 @@ public class TransactionsController {
                 return;
             }
             facade.correctCategory(tx.getId(), edit.category(), edit.remember());
-            banner.accept(TransactionsLogic.correctionMessage(
-                    tx.getId(), edit.category(), edit.remember(), tx.getMerchant()));
+            banner.accept(alerts.combine(TransactionsLogic.correctionMessage(
+                    tx.getId(), edit.category(), edit.remember(), tx.getMerchant())));
             reload();
         }, banner);
     }

@@ -48,6 +48,7 @@ public class BudgetsGoalsController {
     private BudgetBuddyFacade facade;
     private Consumer<String> banner = message -> {
     };
+    private GuiBudgetAlertListener alerts;
 
     @FXML
     private void initialize() {
@@ -73,9 +74,11 @@ public class BudgetsGoalsController {
         });
     }
 
-    public void setFacade(BudgetBuddyFacade facade, Consumer<String> banner) {
+    public void setFacade(BudgetBuddyFacade facade, Consumer<String> banner, GuiBudgetAlertListener alerts) {
         this.facade = facade;
         this.banner = banner;
+        this.alerts = alerts;
+        facade.addBudgetAlertListener(alerts);
         reload();
     }
 
@@ -105,7 +108,7 @@ public class BudgetsGoalsController {
         }
         var month = BudgetsGoalsLogic.parseMonth(budgetMonth.getText());
         facade.saveBudget(category, BudgetsGoalsLogic.parseAmount(budgetAmount.getText()), month);
-        banner.accept(BudgetsGoalsLogic.savedBudgetMessage(month, category.name()));
+        banner.accept(alerts.combine(BudgetsGoalsLogic.savedBudgetMessage(month, category.name())));
         reloadBudgets();
     }
 
