@@ -26,6 +26,7 @@ import ca.budgetbuddy.persistence.SqliteGoalRepository;
 import ca.budgetbuddy.persistence.SqliteTransactionRepository;
 import ca.budgetbuddy.persistence.TransactionRepository;
 import ca.budgetbuddy.service.AiAssistedStrategy;
+import ca.budgetbuddy.service.AnalyticsService;
 import ca.budgetbuddy.service.BudgetAlertListener;
 import ca.budgetbuddy.service.BudgetService;
 import ca.budgetbuddy.service.CategorizationService;
@@ -58,6 +59,7 @@ public final class BudgetBuddyFacade implements AutoCloseable {
     private final CategorizationService categorization;
     private final SpendingCalculator calculator;
     private final BudgetService budgetService;
+    private final AnalyticsService analytics;
     private final BudgetBuddyAgent agent;
     private final boolean aiCategorization;
 
@@ -97,6 +99,7 @@ public final class BudgetBuddyFacade implements AutoCloseable {
         this.categorization = new CategorizationService(rules, transactions, new RuleBasedStrategy());
         this.calculator = new SpendingCalculator(transactions);
         this.budgetService = new BudgetService(budgetRepository, calculator);
+        this.analytics = new AnalyticsService(transactions, calculator, budgetService);
         if (llm == null) {
             this.agent = null;
             this.aiCategorization = false;
@@ -209,15 +212,44 @@ public final class BudgetBuddyFacade implements AutoCloseable {
     }
 
     public List<RecurringPayment> findRecurringPayments() {
-        throw new UnsupportedOperationException("Recurring payment detection is not implemented yet.");
+        List<RecurringPayment> found = analytics.detectRecurring();
+        if (agent != null && !found.isEmpty()) {
+            agent.labelSubscriptions(found);
+        }
+        return found;
+    }
+
+    public String recurringDataWarning() {
+        return analytics.getRecurringWarning();
     }
 
     public List<Anomaly> findUnusualExpenses(YearMonth month) {
-        throw new UnsupportedOperationException("Unusual expense detection is not implemented yet.");
+        Objects.requireNonNull(month, "month");
+        List<Anomaly> found = analytics.detectUnusual(month);
+        if (agent == null) {
+            for (Anomaly anomaly : found) {
+                anomaly.setExplanation(anomaly.getReason());
+            }
+            return found;
+        }
+        agent.explainAnomalies(found);
+        return found;
     }
 
     public MonthlySummary generateMonthlySummary(YearMonth month) {
-        throw new UnsupportedOperationException("Monthly summary is not implemented yet.");
+        Objects.requireNonNull(month, "month");
+        MonthlySummary summary = analytics.buildMonthlyStats(month);
+        if (summary == null) {
+            throw new IllegalArgumentException("No transactions for " + month + ".");
+        }
+        if (agent == null) {
+            return summary;
+        }
+        String recap = agent.writeMonthlySummary(summary);
+        if (recap != null && !recap.isBlank()) {
+            summary.setRecap(recap);
+        }
+        return summary;
     }
 
     public String generateSavingPlan(long goalId) {

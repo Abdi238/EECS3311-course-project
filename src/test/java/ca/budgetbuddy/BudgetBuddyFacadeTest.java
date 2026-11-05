@@ -156,12 +156,7 @@ class BudgetBuddyFacadeTest {
     }
 
     @Test
-    void laterAiFeaturesAreNotImplementedYet() {
-        assertThrows(UnsupportedOperationException.class, () -> facade.findRecurringPayments());
-        assertThrows(UnsupportedOperationException.class,
-                () -> facade.findUnusualExpenses(YearMonth.of(2026, 10)));
-        assertThrows(UnsupportedOperationException.class,
-                () -> facade.generateMonthlySummary(YearMonth.of(2026, 10)));
+    void savingPlanIsNotImplementedYet() {
         assertThrows(UnsupportedOperationException.class, () -> facade.generateSavingPlan(1L));
     }
 

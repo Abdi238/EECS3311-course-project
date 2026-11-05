@@ -2,9 +2,11 @@ package ca.budgetbuddy.cli;
 
 import ca.budgetbuddy.BudgetBuddyFacade;
 import ca.budgetbuddy.llm.LlmConfigLoader;
+import ca.budgetbuddy.model.Anomaly;
 import ca.budgetbuddy.model.Budget;
 import ca.budgetbuddy.model.Category;
 import ca.budgetbuddy.model.MonthlySummary;
+import ca.budgetbuddy.model.RecurringPayment;
 import ca.budgetbuddy.model.SavingsGoal;
 import ca.budgetbuddy.model.Transaction;
 import ca.budgetbuddy.service.BudgetAlertListener;
@@ -23,6 +25,7 @@ import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -39,6 +42,9 @@ import java.util.concurrent.Callable;
                 BudgetBuddyCli.RecategorizeCommand.class,
                 BudgetBuddyCli.BudgetCommand.class,
                 BudgetBuddyCli.TrendsCommand.class,
+                BudgetBuddyCli.RecurringCommand.class,
+                BudgetBuddyCli.UnusualCommand.class,
+                BudgetBuddyCli.SummaryCommand.class,
                 BudgetBuddyCli.GoalCommand.class,
                 BudgetBuddyCli.AskCommand.class
         }
@@ -357,6 +363,94 @@ public class BudgetBuddyCli implements Callable<Integer>, BudgetAlertListener {
                 List<String> tools = parent.facade().getLastToolsUsed();
                 if (!tools.isEmpty()) {
                     System.out.println("Tools used: " + String.join(", ", tools));
+                }
+                return 0;
+            });
+        }
+    }
+
+    @Command(name = "recurring", description = "Find charges that repeat weekly, monthly, or yearly.")
+    public static class RecurringCommand implements Callable<Integer> {
+        @ParentCommand
+        private BudgetBuddyCli parent;
+
+        @Override
+        public Integer call() {
+            return run(() -> {
+                List<RecurringPayment> found = parent.facade().findRecurringPayments();
+                String warning = parent.facade().recurringDataWarning();
+                if (!warning.isBlank()) {
+                    System.out.println(warning);
+                }
+                if (found.isEmpty()) {
+                    System.out.println("No recurring payments.");
+                    return 0;
+                }
+                for (RecurringPayment payment : found) {
+                    System.out.println(payment.getDisplayName()
+                            + " (" + payment.getMerchant() + ") "
+                            + payment.getAmount().toPlainString()
+                            + " " + payment.getFrequency()
+                            + " next " + payment.getNextExpectedDate()
+                            + " subscription " + payment.isSubscription());
+                }
+                return 0;
+            });
+        }
+    }
+
+    @Command(name = "unusual", description = "Flag unusual expenses for a month.")
+    public static class UnusualCommand implements Callable<Integer> {
+        @ParentCommand
+        private BudgetBuddyCli parent;
+
+        @Option(names = "--month", required = true, paramLabel = "yyyy-MM")
+        private String month;
+
+        @Override
+        public Integer call() {
+            return run(() -> {
+                List<Anomaly> found = parent.facade().findUnusualExpenses(parseMonth(month));
+                if (found.isEmpty()) {
+                    System.out.println("Nothing unusual this month.");
+                    return 0;
+                }
+                for (Anomaly anomaly : found) {
+                    Transaction tx = anomaly.getTransaction();
+                    System.out.println(tx.getDate() + " " + tx.getMerchant()
+                            + " " + tx.getAmount().toPlainString()
+                            + " reason " + anomaly.getReason()
+                            + " explanation " + anomaly.getExplanation());
+                }
+                return 0;
+            });
+        }
+    }
+
+    @Command(name = "summary", description = "Show income, spending, budgets, and a recap for a month.")
+    public static class SummaryCommand implements Callable<Integer> {
+        @ParentCommand
+        private BudgetBuddyCli parent;
+
+        @Option(names = "--month", required = true, paramLabel = "yyyy-MM")
+        private String month;
+
+        @Override
+        public Integer call() {
+            return run(() -> {
+                MonthlySummary summary = parent.facade().generateMonthlySummary(parseMonth(month));
+                System.out.println(summary.getMonth()
+                        + " income " + summary.getIncome().toPlainString()
+                        + " spent " + summary.getSpent().toPlainString());
+                for (Map.Entry<Category, BigDecimal> entry : summary.getCategoryTotals().entrySet()) {
+                    System.out.println(entry.getKey() + " " + entry.getValue().toPlainString());
+                }
+                if (!summary.getBudgetResults().isBlank()) {
+                    System.out.println("Budgets:");
+                    System.out.println(summary.getBudgetResults());
+                }
+                if (summary.getRecap() != null && !summary.getRecap().isBlank()) {
+                    System.out.println(summary.getRecap());
                 }
                 return 0;
             });

@@ -1,20 +1,30 @@
 package ca.budgetbuddy.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * A charge that repeats on a regular schedule. Detected in Java; the LLM
- * fills in {@code displayName} and {@code subscription}.
+ * A charge that repeats on a regular schedule. Java fills in the merchant,
+ * amount, frequency, and next expected date. The LLM fills in
+ * {@code displayName} and {@code subscription}.
  */
 public class RecurringPayment {
     private final String merchant;
     private String displayName;
     private final BigDecimal amount;
     private boolean subscription;
+    private String frequency;
+    private LocalDate nextExpectedDate;
 
     public RecurringPayment(String merchant, BigDecimal amount) {
         this(merchant, merchant, amount, false);
+    }
+
+    public RecurringPayment(String merchant, BigDecimal amount, String frequency, LocalDate nextExpectedDate) {
+        this(merchant, amount);
+        this.frequency = frequency;
+        this.nextExpectedDate = nextExpectedDate;
     }
 
     public RecurringPayment(String merchant, String displayName, BigDecimal amount, boolean subscription) {
@@ -46,5 +56,13 @@ public class RecurringPayment {
 
     public void setSubscription(boolean subscription) {
         this.subscription = subscription;
+    }
+
+    public String getFrequency() {
+        return frequency;
+    }
+
+    public LocalDate getNextExpectedDate() {
+        return nextExpectedDate;
     }
 }

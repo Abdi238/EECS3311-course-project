@@ -2,26 +2,68 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="ca.budgetbuddy.gui.InsightsController"
-      spacing="8" style="-fx-padding: 12;">
-    <Label text="Spending trends"/>
-    <HBox spacing="8" alignment="CENTER_LEFT">
-        <TextField fx:id="fromMonth" promptText="From yyyy-MM" prefWidth="140"/>
-        <TextField fx:id="toMonth" promptText="To yyyy-MM" prefWidth="140"/>
-        <Button text="Show trends" onAction="#onShowTrends"/>
-    </HBox>
-    <TableView fx:id="trendTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="monthColumn" text="Month" prefWidth="140"/>
-            <TableColumn fx:id="incomeColumn" text="Income" prefWidth="140"/>
-            <TableColumn fx:id="spentColumn" text="Spent" prefWidth="140"/>
-        </columns>
-    </TableView>
-</VBox>
+<ScrollPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ca.budgetbuddy.gui.InsightsController"
+            fitToWidth="true">
+    <content>
+        <VBox spacing="8" style="-fx-padding: 12;">
+            <Label text="Spending trends"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <TextField fx:id="fromMonth" promptText="From yyyy-MM" prefWidth="140"/>
+                <TextField fx:id="toMonth" promptText="To yyyy-MM" prefWidth="140"/>
+                <Button text="Show trends" onAction="#onShowTrends"/>
+            </HBox>
+            <TableView fx:id="trendTable" prefHeight="160">
+                <columns>
+                    <TableColumn fx:id="monthColumn" text="Month" prefWidth="140"/>
+                    <TableColumn fx:id="incomeColumn" text="Income" prefWidth="140"/>
+                    <TableColumn fx:id="spentColumn" text="Spent" prefWidth="140"/>
+                </columns>
+            </TableView>
+
+            <Label text="Recurring"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Button text="Scan" onAction="#onScanRecurring"/>
+            </HBox>
+            <TableView fx:id="recurringTable" prefHeight="140">
+                <columns>
+                    <TableColumn fx:id="recurringMerchantColumn" text="Merchant" prefWidth="160"/>
+                    <TableColumn fx:id="recurringAmountColumn" text="Amount" prefWidth="90"/>
+                    <TableColumn fx:id="recurringFrequencyColumn" text="Frequency" prefWidth="100"/>
+                    <TableColumn fx:id="recurringNextColumn" text="Next" prefWidth="110"/>
+                    <TableColumn fx:id="recurringNameColumn" text="Name" prefWidth="140"/>
+                    <TableColumn fx:id="recurringSubscriptionColumn" text="Subscription" prefWidth="110"/>
+                </columns>
+            </TableView>
+
+            <Label text="Unusual expenses"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <TextField fx:id="unusualMonth" promptText="yyyy-MM" prefWidth="140"/>
+                <Button text="Scan" onAction="#onScanUnusual"/>
+            </HBox>
+            <TableView fx:id="unusualTable" prefHeight="140">
+                <columns>
+                    <TableColumn fx:id="unusualDateColumn" text="Date" prefWidth="110"/>
+                    <TableColumn fx:id="unusualMerchantColumn" text="Merchant" prefWidth="160"/>
+                    <TableColumn fx:id="unusualAmountColumn" text="Amount" prefWidth="90"/>
+                    <TableColumn fx:id="unusualReasonColumn" text="Reason" prefWidth="180"/>
+                    <TableColumn fx:id="unusualExplanationColumn" text="Explanation" prefWidth="260"/>
+                </columns>
+            </TableView>
+
+            <Label text="Summary"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <TextField fx:id="summaryMonth" promptText="yyyy-MM" prefWidth="140"/>
+                <Button text="Generate" onAction="#onGenerateSummary"/>
+            </HBox>
+            <Label fx:id="summaryText" wrapText="true"/>
+        </VBox>
+    </content>
+</ScrollPane>

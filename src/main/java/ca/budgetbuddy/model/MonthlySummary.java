@@ -15,6 +15,7 @@ public class MonthlySummary {
     private final BigDecimal spent;
     private final Map<Category, BigDecimal> categoryTotals;
     private String recap;
+    private String budgetResults;
 
     public MonthlySummary(YearMonth month, BigDecimal income, BigDecimal spent,
                           Map<Category, BigDecimal> categoryTotals) {
@@ -49,5 +50,16 @@ public class MonthlySummary {
 
     public void setRecap(String recap) {
         this.recap = recap;
+    }
+
+    public String getBudgetResults() {
+        if (budgetResults == null) {
+            return "";
+        }
+        return budgetResults;
+    }
+
+    public void setBudgetResults(String budgetResults) {
+        this.budgetResults = budgetResults;
     }
 }
