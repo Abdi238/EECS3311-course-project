@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BudgetBuddyFacadeTest {
@@ -153,11 +152,6 @@ class BudgetBuddyFacadeTest {
     @Test
     void mockClientEnablesAiCategorization() {
         assertEquals("", facade.aiCategorizationNotice());
-    }
-
-    @Test
-    void savingPlanIsNotImplementedYet() {
-        assertThrows(UnsupportedOperationException.class, () -> facade.generateSavingPlan(1L));
     }
 
     private static final class HistoryClient implements LLMClient {

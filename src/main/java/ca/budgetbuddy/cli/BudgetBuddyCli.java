@@ -308,7 +308,8 @@ public class BudgetBuddyCli implements Callable<Integer>, BudgetAlertListener {
         }
     }
 
-    @Command(name = "goal", description = "Savings goals.", subcommands = GoalAddCommand.class)
+    @Command(name = "goal", description = "Savings goals.",
+            subcommands = {GoalAddCommand.class, GoalPlanCommand.class})
     public static class GoalCommand implements Callable<Integer> {
         @ParentCommand
         private BudgetBuddyCli parent;
@@ -342,6 +343,23 @@ public class BudgetBuddyCli implements Callable<Integer>, BudgetAlertListener {
                 System.out.println("Saved goal " + saved.getId() + " " + saved.getName()
                         + " target " + saved.getTarget().toPlainString()
                         + " deadline " + saved.getDeadline() + ".");
+                return 0;
+            });
+        }
+    }
+
+    @Command(name = "plan", description = "Ask for a saving plan for a goal.")
+    public static class GoalPlanCommand implements Callable<Integer> {
+        @ParentCommand
+        private GoalCommand goal;
+
+        @Parameters(index = "0", paramLabel = "ID")
+        private long id;
+
+        @Override
+        public Integer call() {
+            return run(() -> {
+                System.out.println(goal.parent.facade().generateSavingPlan(id));
                 return 0;
             });
         }

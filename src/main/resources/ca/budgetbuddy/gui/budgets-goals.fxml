@@ -39,4 +39,16 @@
         <TextField fx:id="contributionAmount" promptText="Contribution" prefWidth="140"/>
         <Button text="Add contribution" onAction="#onAddContribution"/>
     </HBox>
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Goals" style="-fx-font-size: 14px;"/>
+        <Button text="Get AI Plan" onAction="#onGeneratePlan"/>
+    </HBox>
+    <TableView fx:id="goalTable" prefHeight="140">
+        <columns>
+            <TableColumn fx:id="goalNameColumn" text="Name" prefWidth="180"/>
+            <TableColumn fx:id="goalTargetColumn" text="Target" prefWidth="120"/>
+            <TableColumn fx:id="goalSavedColumn" text="Saved" prefWidth="120"/>
+            <TableColumn fx:id="goalDeadlineColumn" text="Deadline" prefWidth="140"/>
+        </columns>
+    </TableView>
 </VBox>

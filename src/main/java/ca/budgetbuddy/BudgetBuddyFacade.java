@@ -30,6 +30,7 @@ import ca.budgetbuddy.service.AnalyticsService;
 import ca.budgetbuddy.service.BudgetAlertListener;
 import ca.budgetbuddy.service.BudgetService;
 import ca.budgetbuddy.service.CategorizationService;
+import ca.budgetbuddy.service.GoalService;
 import ca.budgetbuddy.service.ImportResult;
 import ca.budgetbuddy.service.ImportService;
 import ca.budgetbuddy.service.RuleBasedStrategy;
@@ -51,10 +52,12 @@ import java.util.Objects;
 public final class BudgetBuddyFacade implements AutoCloseable {
     public static final String ASSISTANT_OFFLINE = "assistant offline";
     public static final String AI_CATEGORIZATION_OFFLINE = "AI categorization is offline";
+    public static final String GOAL_ALREADY_REACHED = "Goal already reached.";
 
     private final Database database;
     private final TransactionRepository transactions;
     private final GoalRepository goals;
+    private final GoalService goalService;
     private final ImportService importService;
     private final CategorizationService categorization;
     private final SpendingCalculator calculator;
@@ -94,6 +97,7 @@ public final class BudgetBuddyFacade implements AutoCloseable {
         this.transactions = new SqliteTransactionRepository(database);
         BudgetRepository budgetRepository = new SqliteBudgetRepository(database);
         this.goals = new SqliteGoalRepository(database);
+        this.goalService = new GoalService(goals);
         CategoryRuleRepository rules = new SqliteCategoryRuleRepository(database);
         this.importService = new ImportService(transactions);
         this.categorization = new CategorizationService(rules, transactions, new RuleBasedStrategy());
@@ -253,7 +257,29 @@ public final class BudgetBuddyFacade implements AutoCloseable {
     }
 
     public String generateSavingPlan(long goalId) {
-        throw new UnsupportedOperationException("Saving plan is not implemented yet.");
+        SavingsGoal goal = goalService.getGoal(goalId);
+        if (goal == null) {
+            throw new IllegalArgumentException("Savings goal not found: " + goalId);
+        }
+        if (goal.isComplete()) {
+            return GOAL_ALREADY_REACHED;
+        }
+        if (agent == null) {
+            return requiredPerMonthOnly(goal);
+        }
+        try {
+            String plan = agent.proposeSavingPlan(goal);
+            if (plan == null || plan.isBlank()) {
+                return requiredPerMonthOnly(goal);
+            }
+            return plan;
+        } catch (RuntimeException ex) {
+            return requiredPerMonthOnly(goal);
+        }
+    }
+
+    private static String requiredPerMonthOnly(SavingsGoal goal) {
+        return "Required per month: " + goal.requiredPerMonth().toPlainString();
     }
 
     @Override

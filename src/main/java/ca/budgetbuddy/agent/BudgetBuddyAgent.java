@@ -5,6 +5,7 @@ import ca.budgetbuddy.llm.LlmResponse;
 import ca.budgetbuddy.model.Anomaly;
 import ca.budgetbuddy.model.MonthlySummary;
 import ca.budgetbuddy.model.RecurringPayment;
+import ca.budgetbuddy.model.SavingsGoal;
 import ca.budgetbuddy.service.PromptBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,7 +53,19 @@ public final class BudgetBuddyAgent {
         lastToolsUsed.clear();
         lastAnswerIncomplete = false;
         memory.add("user", question);
-        return runLoop();
+        return runLoop(PROMPT);
+    }
+
+    /**
+     * Same tool loop as {@link #ask(String)}, with the saving-plan prompt.
+     */
+    public String proposeSavingPlan(SavingsGoal goal) {
+        Objects.requireNonNull(goal, "goal");
+        lastToolsUsed.clear();
+        lastAnswerIncomplete = false;
+        String prompt = PromptBuilder.savingPlanPrompt(goal);
+        memory.add("user", prompt);
+        return runLoop(prompt);
     }
 
     public List<String> getLastToolsUsed() {
@@ -63,10 +76,10 @@ public final class BudgetBuddyAgent {
         return lastAnswerIncomplete;
     }
 
-    private String runLoop() {
+    private String runLoop(String prompt) {
         String lastToolResult = null;
         for (int step = 0; step < maxSteps; step++) {
-            LlmResponse response = llm.complete(PROMPT, memory.recent(), tools.getTools());
+            LlmResponse response = llm.complete(prompt, memory.recent(), tools.getTools());
             if (response == null) {
                 throw new IllegalStateException("LLMClient returned a null response.");
             }

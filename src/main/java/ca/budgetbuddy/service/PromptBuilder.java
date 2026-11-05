@@ -5,6 +5,7 @@ import ca.budgetbuddy.model.Category;
 import ca.budgetbuddy.model.CategoryRule;
 import ca.budgetbuddy.model.MonthlySummary;
 import ca.budgetbuddy.model.RecurringPayment;
+import ca.budgetbuddy.model.SavingsGoal;
 import ca.budgetbuddy.model.Transaction;
 
 import java.math.BigDecimal;
@@ -107,6 +108,22 @@ public final class PromptBuilder {
         } else {
             prompt.append(' ').append(summary.getBudgetResults().replace('\n', ' ')).append('.');
         }
+        return prompt.toString();
+    }
+
+    public static String savingPlanPrompt(SavingsGoal goal) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Write a saving plan for this goal. ");
+        prompt.append("Use SpendingTool for recent spending and for recurring payments before you answer. ");
+        prompt.append("Reply in text with a monthly target, 3 to 5 suggestions, and whether the goal looks realistic. ");
+        prompt.append("Use only numbers from the tools and this goal. Do not invent transactions. ");
+        prompt.append("The plan is informational and not financial advice. ");
+        prompt.append("Goal ").append(goal.getName());
+        prompt.append(". Target ").append(goal.getTarget().toPlainString());
+        prompt.append(". Saved ").append(goal.getSaved().toPlainString());
+        prompt.append(". Deadline ").append(goal.getDeadline());
+        prompt.append(". Required per month ").append(goal.requiredPerMonth().toPlainString());
+        prompt.append('.');
         return prompt.toString();
     }
 }

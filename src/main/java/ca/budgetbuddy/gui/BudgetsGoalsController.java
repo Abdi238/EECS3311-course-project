@@ -6,12 +6,16 @@ import ca.budgetbuddy.model.Category;
 import ca.budgetbuddy.model.SavingsGoal;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.util.StringConverter;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -44,6 +48,16 @@ public class BudgetsGoalsController {
     private ChoiceBox<SavingsGoal> contributionGoal;
     @FXML
     private TextField contributionAmount;
+    @FXML
+    private TableView<SavingsGoal> goalTable;
+    @FXML
+    private TableColumn<SavingsGoal, String> goalNameColumn;
+    @FXML
+    private TableColumn<SavingsGoal, String> goalTargetColumn;
+    @FXML
+    private TableColumn<SavingsGoal, String> goalSavedColumn;
+    @FXML
+    private TableColumn<SavingsGoal, String> goalDeadlineColumn;
 
     private BudgetBuddyFacade facade;
     private Consumer<String> banner = message -> {
@@ -58,6 +72,10 @@ public class BudgetsGoalsController {
         budgetCategoryColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getCategory().name()));
         budgetLimitColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getLimit().toPlainString()));
         budgetSpentColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getSpent().toPlainString()));
+        goalNameColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getName()));
+        goalTargetColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getTarget().toPlainString()));
+        goalSavedColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getSaved().toPlainString()));
+        goalDeadlineColumn.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getDeadline().toString()));
         contributionGoal.setConverter(new StringConverter<>() {
             @Override
             public String toString(SavingsGoal goal) {
@@ -95,6 +113,11 @@ public class BudgetsGoalsController {
     @FXML
     private void onAddContribution() {
         UiFeedback.run(this::addContribution, banner);
+    }
+
+    @FXML
+    private void onGeneratePlan() {
+        UiFeedback.run(this::generatePlan, banner);
     }
 
     private void saveBudget() {
@@ -139,6 +162,32 @@ public class BudgetsGoalsController {
         reloadGoals();
     }
 
+    private void generatePlan() {
+        if (facade == null) {
+            return;
+        }
+        SavingsGoal selected = goalTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            banner.accept("Choose a savings goal.");
+            return;
+        }
+        String plan = facade.generateSavingPlan(selected.getId());
+        showPlan(selected.getName(), plan);
+    }
+
+    private void showPlan(String name, String plan) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Saving plan");
+        dialog.setHeaderText(name);
+        TextArea area = new TextArea(plan);
+        area.setEditable(false);
+        area.setWrapText(true);
+        area.setPrefSize(480, 220);
+        dialog.getDialogPane().setContent(area);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+        dialog.showAndWait();
+    }
+
     private void reload() {
         reloadBudgets();
         reloadGoals();
@@ -157,13 +206,28 @@ public class BudgetsGoalsController {
             return;
         }
         SavingsGoal selected = contributionGoal.getValue();
-        contributionGoal.getItems().setAll(facade.getGoals());
-        if (selected == null) {
+        SavingsGoal selectedRow = goalTable.getSelectionModel().getSelectedItem();
+        long selectedRowId = -1;
+        if (selectedRow != null) {
+            selectedRowId = selectedRow.getId();
+        }
+        List<SavingsGoal> loaded = facade.getGoals();
+        contributionGoal.getItems().setAll(loaded);
+        goalTable.getItems().setAll(loaded);
+        if (selected != null) {
+            for (SavingsGoal goal : contributionGoal.getItems()) {
+                if (goal.getId() == selected.getId()) {
+                    contributionGoal.setValue(goal);
+                    break;
+                }
+            }
+        }
+        if (selectedRowId < 0) {
             return;
         }
-        for (SavingsGoal goal : contributionGoal.getItems()) {
-            if (goal.getId() == selected.getId()) {
-                contributionGoal.setValue(goal);
+        for (SavingsGoal goal : goalTable.getItems()) {
+            if (goal.getId() == selectedRowId) {
+                goalTable.getSelectionModel().select(goal);
                 return;
             }
         }
