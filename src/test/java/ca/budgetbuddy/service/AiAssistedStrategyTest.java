@@ -42,6 +42,24 @@ class AiAssistedStrategyTest {
     }
 
     @Test
+    void appliesMarkdownFencedJsonReply() {
+        Transaction coffee = transaction(2, "Campus Coffee Shop", "6.25");
+        Queue<LlmResponse> script = new ArrayDeque<>();
+        script.add(new LlmResponse("""
+                ```json
+                [
+                  {"index": 0, "category": "DINING", "confidence": 0.91}
+                ]
+                ```
+                """, null, null));
+
+        new AiAssistedStrategy(new MockLlmClient(script)).categorize(List.of(coffee), List.of());
+
+        assertEquals(Category.DINING, coffee.getCategory());
+        assertEquals(CategorySource.AI, coffee.getSource());
+    }
+
+    @Test
     void invalidJsonLeavesTransactionsUncategorized() {
         Transaction coffee = transaction(2, "Campus Coffee Shop", "6.25");
         Queue<LlmResponse> script = new ArrayDeque<>();

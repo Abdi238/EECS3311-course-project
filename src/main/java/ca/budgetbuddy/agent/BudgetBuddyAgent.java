@@ -1,5 +1,6 @@
 package ca.budgetbuddy.agent;
 
+import ca.budgetbuddy.llm.JsonReply;
 import ca.budgetbuddy.llm.LLMClient;
 import ca.budgetbuddy.llm.LlmResponse;
 import ca.budgetbuddy.model.Anomaly;
@@ -185,7 +186,7 @@ public final class BudgetBuddyAgent {
             return null;
         }
         try {
-            JsonNode root = MAPPER.readTree(text);
+            JsonNode root = MAPPER.readTree(JsonReply.unwrap(text));
             if (root != null && root.isArray()) {
                 return root;
             }

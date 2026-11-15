@@ -1,5 +1,6 @@
 package ca.budgetbuddy.service;
 
+import ca.budgetbuddy.llm.JsonReply;
 import ca.budgetbuddy.llm.LLMClient;
 import ca.budgetbuddy.llm.LlmResponse;
 import ca.budgetbuddy.model.Category;
@@ -65,7 +66,7 @@ public class AiAssistedStrategy implements CategorizationStrategy {
     private void applyReply(List<Transaction> remaining, String text) {
         JsonNode root;
         try {
-            root = MAPPER.readTree(text);
+            root = MAPPER.readTree(JsonReply.unwrap(text));
         } catch (JsonProcessingException ex) {
             return;
         }
