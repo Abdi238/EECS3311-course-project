@@ -77,17 +77,406 @@ The application implements six patterns. The requirement is five.
 
 **3.7 Updated UML class diagram.** The implemented system is shown in three parts, matching the three-part Stage 1 class diagram. Part 1 covers the presentation layer and the facade, part 2 covers services, the agent, and the LLM layer, and part 3 covers the domain model and persistence. The Mermaid source for each part is in `docs/diagrams/`.
 
-![Class diagram part 1: presentation and facade](/home/claude/uml/01-class-presentation-facade.png){width=100%}
+```mermaid
+classDiagram
+    direction TB
+    class Main {
+        +main(args)
+    }
+    class MainApp {
+        +start(stage)
+    }
+    class MainController
+    class TransactionsController
+    class BudgetsGoalsController
+    class InsightsController
+    class AskController
+    class TransactionsLogic
+    class BudgetsGoalsLogic
+    class InsightsLogic
+    class AskLogic
+    class BudgetBuddyCli {
+        +call() Integer
+        +onBudgetAlert(message)
+    }
+    class GuiBudgetAlertListener {
+        +onBudgetAlert(message)
+    }
+    class BudgetAlertListener {
+        <<interface>>
+        +onBudgetAlert(message)
+    }
+    class BudgetBuddyFacade {
+        +importTransactions(file, bank) ImportResult
+        +saveBudget(category, limit, month) Budget
+        +correctCategory(txId, category, remember) Transaction
+        +ask(question) String
+        +generateMonthlySummary(month) MonthlySummary
+        +generateSavingPlan(goalId) String
+        +getLastToolsUsed() List~String~
+    }
 
-![Class diagram part 2: services, agent, and LLM](/home/claude/uml/02-class-services-agent-llm.png){width=100%}
+    Main --> BudgetBuddyCli : creates
+    Main --> MainApp : launches
+    MainApp --> MainController
+    MainController --> TransactionsController
+    MainController --> BudgetsGoalsController
+    MainController --> InsightsController
+    MainController --> AskController
+    TransactionsController --> TransactionsLogic
+    BudgetsGoalsController --> BudgetsGoalsLogic
+    InsightsController --> InsightsLogic
+    AskController --> AskLogic
+    TransactionsController ..> BudgetBuddyFacade : facade only
+    BudgetsGoalsController ..> BudgetBuddyFacade : facade only
+    InsightsController ..> BudgetBuddyFacade : facade only
+    AskController ..> BudgetBuddyFacade : facade only
+    BudgetBuddyCli ..> BudgetBuddyFacade : facade only
+    GuiBudgetAlertListener ..|> BudgetAlertListener
+    BudgetBuddyCli ..|> BudgetAlertListener
+```
 
-![Class diagram part 3: domain and persistence](/home/claude/uml/03-class-domain-persistence.png){width=100%}
+```mermaid
+classDiagram
+    direction TB
+    class BudgetBuddyFacade
+    class ImportService {
+        +importFile(path, bank) ImportResult
+        +parseRow(row, bank)
+    }
+    class CategorizationService {
+        -strategy
+        +setStrategy(strategy)
+        +categorize(transactions)
+        +correctCategory(txId, category, remember)
+    }
+    class CategorizationStrategy {
+        <<interface>>
+        +categorize(transactions)
+    }
+    class RuleBasedStrategy {
+        +categorize(transactions)
+    }
+    class AiAssistedStrategy {
+        +MIN_CONFIDENCE 0.6
+        +categorize(transactions)
+    }
+    class JsonReply {
+        +stripFences(text) String
+    }
+    class PromptBuilder {
+        +categorizePrompt(transactions, rules)$ String
+        +savingPlanPrompt(goal)$ String
+    }
+    class BudgetService {
+        +saveBudget(category, limit, month) Budget
+        +recalculate(month)
+        +addAlertListener(listener)
+        -notifyListeners(message)
+    }
+    class BudgetAlertListener {
+        <<interface>>
+        +onBudgetAlert(message)
+    }
+    class AnalyticsService {
+        +getSpendingTrends(from, to) List~MonthlySummary~
+        +detectRecurring() List~RecurringPayment~
+        +detectUnusual(month) List~Anomaly~
+        +generateMonthlySummary(month) MonthlySummary
+    }
+    class GoalService {
+        +createGoal(name, target, deadline) SavingsGoal
+        +addContribution(goalId, amount) SavingsGoal
+        +getGoal(goalId) SavingsGoal
+    }
+    class SpendingCalculator {
+        +monthsWithData() List~YearMonth~
+    }
+    class BudgetBuddyAgent {
+        -maxSteps = 6
+        -lastAnswerIncomplete
+        +ask(question) String
+        +proposeSavingPlan(goal) String
+        +labelSubscriptions(items)
+        +explainAnomalies(items)
+        +writeMonthlySummary(summary) String
+        +getLastToolsUsed() List~String~
+    }
+    class ConversationMemory {
+        +add(role, content)
+        +clear()
+    }
+    class ToolRegistry {
+        +execute(toolName, args) String
+    }
+    class AgentTool {
+        <<interface>>
+        +execute(args) String
+    }
+    class SpendingTool {
+        +execute(args) String
+    }
+    class BudgetTool {
+        +execute(args) String
+    }
+    class GoalsTool {
+        +execute(args) String
+    }
+    class LLMClient {
+        <<interface>>
+        +complete(prompt, history, tools) LlmResponse
+    }
+    class ClaudeAdapter {
+        +complete(prompt, history, tools) LlmResponse
+    }
+    class MockLlmClient {
+        +complete(prompt, history, tools) LlmResponse
+    }
+    class LlmResponse {
+        +text
+        +toolName
+        +toolArgs
+    }
+    class LlmConfigLoader {
+        +load() LlmConfig
+    }
+    class LlmConfig
+
+    BudgetBuddyFacade --> ImportService
+    BudgetBuddyFacade --> CategorizationService
+    BudgetBuddyFacade --> BudgetService
+    BudgetBuddyFacade --> AnalyticsService
+    BudgetBuddyFacade --> GoalService
+    BudgetBuddyFacade --> SpendingCalculator
+    BudgetBuddyFacade --> BudgetBuddyAgent
+
+    CategorizationService o--> CategorizationStrategy : strategy
+    RuleBasedStrategy ..|> CategorizationStrategy
+    AiAssistedStrategy ..|> CategorizationStrategy
+    AiAssistedStrategy --> LLMClient : uses
+    AiAssistedStrategy ..> JsonReply : parses fenced JSON
+    AiAssistedStrategy ..> PromptBuilder
+
+    BudgetService o--> "0..*" BudgetAlertListener : notifies
+    BudgetBuddyAgent --> LLMClient : complete()
+    BudgetBuddyAgent --> ToolRegistry
+    BudgetBuddyAgent --> ConversationMemory
+    BudgetBuddyAgent ..> PromptBuilder
+
+    ToolRegistry o--> "0..*" AgentTool : registers
+    SpendingTool ..|> AgentTool
+    BudgetTool ..|> AgentTool
+    GoalsTool ..|> AgentTool
+    SpendingTool --> SpendingCalculator
+    BudgetTool --> SpendingCalculator
+    GoalsTool --> GoalService
+
+    ClaudeAdapter ..|> LLMClient
+    MockLlmClient ..|> LLMClient
+    ClaudeAdapter ..> LlmResponse
+    ClaudeAdapter ..> LlmConfig
+    LlmConfigLoader ..> LlmConfig
+```
+
+```mermaid
+classDiagram
+    direction TB
+    class Transaction {
+        +id
+        +date
+        +description
+        +amount
+        +category
+        +source
+    }
+    class Category {
+        <<enumeration>>
+        GROCERIES
+        DINING
+        ...
+    }
+    class CategorySource {
+        <<enumeration>>
+        RULE
+        AI
+        USER
+        NONE
+    }
+    class CategoryRule {
+        +merchant
+        +category
+    }
+    class Budget {
+        +category
+        +limit
+        +month
+    }
+    class SavingsGoal {
+        +name
+        +target
+        +saved
+        +deadline
+        +requiredPerMonth() BigDecimal
+        +isComplete() boolean
+    }
+    class RecurringPayment
+    class Anomaly
+    class MonthlySummary
+    class TransactionRepository {
+        <<interface>>
+        +findBetween(from, to) List~Transaction~
+    }
+    class CategoryRuleRepository {
+        <<interface>>
+    }
+    class BudgetRepository {
+        <<interface>>
+    }
+    class GoalRepository {
+        <<interface>>
+    }
+    class SqliteTransactionRepository
+    class SqliteCategoryRuleRepository
+    class SqliteBudgetRepository
+    class SqliteGoalRepository
+    class Database {
+        +close()
+    }
+
+    Transaction --> Category
+    Transaction --> CategorySource
+    SqliteTransactionRepository ..|> TransactionRepository
+    SqliteCategoryRuleRepository ..|> CategoryRuleRepository
+    SqliteBudgetRepository ..|> BudgetRepository
+    SqliteGoalRepository ..|> GoalRepository
+    SqliteTransactionRepository --> Database
+    SqliteCategoryRuleRepository --> Database
+    SqliteBudgetRepository --> Database
+    SqliteGoalRepository --> Database
+```
 
 **3.8 Updated sequence diagrams.** The F09 and F11 sequence diagrams differ from Stage 1 (SD05 and SD06), so they are updated below. The F10 part of SD06 is kept, with the presentation participant changed to `InsightsController`. The use-case diagram (UC01 to UC11) does not change, since no use cases were added or removed.
 
-![Sequence diagram SD05 (updated): Ask Budget Buddy (F09)](/home/claude/uml/04-seq-f09-ask.png){width=100%}
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant AC as AskController
+    participant CLI as BudgetBuddyCli
+    participant F as BudgetBuddyFacade
+    participant A as BudgetBuddyAgent
+    participant M as ConversationMemory
+    participant TR as ToolRegistry
+    participant T as SpendingTool
+    participant SC as SpendingCalculator
+    participant LLM as ClaudeAdapter
 
-![Sequence diagram SD06 (updated): Monthly Summary (F10) and Saving Plan (F11)](/home/claude/uml/05-seq-f10-f11.png){width=100%}
+    alt GUI
+        U->>AC: send question
+        AC->>F: ask(question)
+    else CLI
+        U->>CLI: ask question
+        CLI->>F: ask(question)
+    end
+    F->>A: ask(question)
+    A->>M: clear()
+    A->>M: add(user, question)
+    loop until text reply or maxSteps (6)
+        A->>LLM: complete(prompt, history, tools)
+        alt tool call
+            LLM-->>A: toolName and toolArgs
+            A->>TR: execute(toolName, args)
+            TR->>T: execute(args)
+            T->>SC: spending for month
+            SC-->>T: categories and monthsWithData
+            T-->>TR: JSON result
+            TR-->>A: JSON result
+            A->>M: add(tool, result)
+        else unknown tool or bad arguments
+            TR-->>A: JSON error, LLM can retry
+        else final text
+            LLM-->>A: text reply
+        end
+    end
+    opt maxSteps reached
+        A->>A: mark answer incomplete
+    end
+    A-->>F: answer
+    F-->>AC: answer
+    AC->>F: getLastToolsUsed()
+    AC-->>U: answer and tools used
+```
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant IC as InsightsController
+    participant BC as BudgetsGoalsController
+    participant F as BudgetBuddyFacade
+    participant AN as AnalyticsService
+    participant GS as GoalService
+    participant A as BudgetBuddyAgent
+    participant M as ConversationMemory
+    participant TR as ToolRegistry
+    participant GT as GoalsTool
+    participant LLM as ClaudeAdapter
+
+    rect rgb(245, 245, 245)
+        Note over U,LLM: F10 Monthly summary
+        U->>IC: onGenerateSummary()
+        IC->>F: generateMonthlySummary(month)
+        F->>AN: generateMonthlySummary(month)
+        alt no transactions
+            AN-->>F: empty summary
+            F-->>IC: no data message
+            IC-->>U: show no data message
+        else stats ready
+            AN-->>F: MonthlySummary
+            F->>A: writeMonthlySummary(summary)
+            A->>LLM: complete(summary prompt)
+            LLM-->>A: recap
+            A-->>F: recap
+            F-->>IC: recap
+            IC-->>U: show summary
+        end
+    end
+
+    rect rgb(245, 245, 245)
+        Note over U,LLM: F11 Saving plan
+        U->>BC: onGeneratePlan() for selected goal
+        BC->>F: generateSavingPlan(goalId)
+        F->>GS: getGoal(goalId)
+        GS-->>F: SavingsGoal
+        alt goal already complete
+            F-->>BC: goal already reached
+        else goal open
+            F->>A: proposeSavingPlan(goal)
+            A->>M: clear()
+            A->>M: add(user, savingPlanPrompt(goal))
+            loop until plan text or maxSteps (6)
+                A->>LLM: complete(prompt, history, tools)
+                alt tool call
+                    LLM-->>A: toolName and toolArgs
+                    A->>TR: execute(toolName, args)
+                    TR->>GT: execute(args)
+                    GT-->>TR: JSON with requiredPerMonth and monthsWithData
+                    TR-->>A: JSON result
+                    A->>M: add(tool, result)
+                else final text
+                    LLM-->>A: plan text
+                end
+            end
+            alt plan ready and not incomplete
+                A-->>F: plan
+                F-->>BC: plan
+                BC-->>U: show plan
+            else incomplete, empty, or error
+                F->>F: requiredPerMonth from goal
+                F-->>BC: Required per month amount
+                BC-->>U: show fallback amount
+            end
+        end
+    end
+```
 
 **What changed from Stage 1 (diagrams).**
 
