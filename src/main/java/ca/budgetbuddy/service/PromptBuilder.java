@@ -114,8 +114,12 @@ public final class PromptBuilder {
     public static String savingPlanPrompt(SavingsGoal goal) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Write a saving plan for this goal. ");
-        prompt.append("Use SpendingTool for recent spending and for recurring payments before you answer. ");
-        prompt.append("Reply in text with a monthly target, 3 to 5 suggestions, and whether the goal looks realistic. ");
+        prompt.append("Call SpendingTool at most twice: once for spendingByCategory on a month that has data, ");
+        prompt.append("and once for recurringPayments if needed. ");
+        prompt.append("If a tool returns empty categories or lists monthsWithData, use one of those months ");
+        prompt.append("or stop calling tools and answer from the goal numbers. ");
+        prompt.append("Do not keep trying random months. After the tool results, reply in plain text only ");
+        prompt.append("with a monthly target, 3 to 5 suggestions, and whether the goal looks realistic. ");
         prompt.append("Use only numbers from the tools and this goal. Do not invent transactions. ");
         prompt.append("The plan is informational and not financial advice. ");
         prompt.append("Goal ").append(goal.getName());

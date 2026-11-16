@@ -43,7 +43,8 @@ public final class SpendingTool implements AgentTool {
     public String getDescription() {
         return "Looks up spending. query is spendingByCategory, biggestPurchases, "
                 + "or recurringPayments. month is yyyy-MM for the first two. "
-                + "biggestPurchases accepts an optional limit.";
+                + "biggestPurchases accepts an optional limit. "
+                + "If categories are empty, use a month from monthsWithData or stop.";
     }
 
     @Override
@@ -84,6 +85,9 @@ public final class SpendingTool implements AgentTool {
             row.put("category", category.name());
             row.put("total", total.toPlainString());
         }
+        if (categories.isEmpty()) {
+            addMonthsWithData(root);
+        }
         return write(root);
     }
 
@@ -99,7 +103,17 @@ public final class SpendingTool implements AgentTool {
             row.put("amount", tx.getAmount().toPlainString());
             row.put("category", tx.getCategory().name());
         }
+        if (purchases.isEmpty()) {
+            addMonthsWithData(root);
+        }
         return write(root);
+    }
+
+    private void addMonthsWithData(ObjectNode root) {
+        ArrayNode months = root.putArray("monthsWithData");
+        for (YearMonth month : calculator.monthsWithData()) {
+            months.add(month.toString());
+        }
     }
 
     private String recurring() {

@@ -53,6 +53,7 @@ public final class BudgetBuddyAgent {
         Objects.requireNonNull(question, "question");
         lastToolsUsed.clear();
         lastAnswerIncomplete = false;
+        memory.clear();
         memory.add("user", question);
         return runLoop(PROMPT);
     }
@@ -64,6 +65,7 @@ public final class BudgetBuddyAgent {
         Objects.requireNonNull(goal, "goal");
         lastToolsUsed.clear();
         lastAnswerIncomplete = false;
+        memory.clear();
         String prompt = PromptBuilder.savingPlanPrompt(goal);
         memory.add("user", prompt);
         return runLoop(prompt);

@@ -86,6 +86,27 @@ class SavingPlanTest {
         assertEquals("Required per month: " + stored.requiredPerMonth().toPlainString(), plan);
     }
 
+    @Test
+    void incompleteAgentLoopFallsBackToRequiredPerMonth() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode spending = mapper.createObjectNode();
+        spending.put("query", "spendingByCategory");
+        spending.put("month", "2023-06");
+        Queue<LlmResponse> script = new ArrayDeque<>();
+        for (int step = 0; step < 6; step++) {
+            script.add(new LlmResponse(null, "SpendingTool", spending));
+        }
+        script.add(new LlmResponse("This seventh reply must not be used.", null, null));
+        open(new MockLlmClient(script));
+        SavingsGoal goal = facade.createGoal(
+                "Emergency fund", new BigDecimal("500.00"), LocalDate.now().plusMonths(10));
+
+        String plan = facade.generateSavingPlan(goal.getId());
+
+        assertEquals("Required per month: " + goal.requiredPerMonth().toPlainString(), plan);
+        assertEquals(1, script.size());
+    }
+
     private void open(ca.budgetbuddy.llm.LLMClient client) {
         database = Database.inMemory();
         facade = BudgetBuddyFacade.create(database, client);

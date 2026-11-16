@@ -269,7 +269,7 @@ public final class BudgetBuddyFacade implements AutoCloseable {
         }
         try {
             String plan = agent.proposeSavingPlan(goal);
-            if (plan == null || plan.isBlank()) {
+            if (plan == null || plan.isBlank() || agent.isLastAnswerIncomplete()) {
                 return requiredPerMonthOnly(goal);
             }
             return plan;

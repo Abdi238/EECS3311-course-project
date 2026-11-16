@@ -20,4 +20,8 @@ public final class ConversationMemory {
     public List<String> recent() {
         return List.copyOf(turns);
     }
+
+    public void clear() {
+        turns.clear();
+    }
 }

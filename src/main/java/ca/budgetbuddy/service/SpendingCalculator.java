@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Totals and groupings computed from stored transactions. Money math stays in Java.
@@ -85,6 +86,17 @@ public final class SpendingCalculator {
             payments.add(new RecurringPayment(latest.getMerchant(), latest.getAmount()));
         }
         return payments;
+    }
+
+    /**
+     * Months that have at least one stored transaction, oldest first.
+     */
+    public List<YearMonth> monthsWithData() {
+        TreeSet<YearMonth> months = new TreeSet<>();
+        for (Transaction tx : transactions.findBetween(RANGE_START, RANGE_END)) {
+            months.add(YearMonth.from(tx.getDate()));
+        }
+        return List.copyOf(months);
     }
 
     public BigDecimal totalFor(YearMonth month, Category category) {
