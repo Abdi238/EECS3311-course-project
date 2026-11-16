@@ -501,7 +501,7 @@ Format: original design, implemented change, reason, impact.
 | Tool / platform | LLM / model | Used for | Token cost | Money cost |
 |---|---|---|---|---|
 | Cursor (Agent mode) | Cursor Agent (Auto / Composer) | Writing most of the Java code: GUI, CLI, services, and tests | Included in the Cursor plan | $0 (Cursor Pro, free under the student plan) |
-| Claude via Anthropic API (runtime) | `claude-sonnet-4-6` (set in local `.env`; the `.env.example` default is `claude-sonnet-4-20250514`) | Runtime LLM for F02, F07, F08, F09, F10, and F11 | [TODO: total input and output tokens from the Anthropic Usage page] | About $1.14 (from the Billing page: $5.65 credit granted Nov 5, 2026, minus $4.51 remaining) [TODO: confirm against the Usage page] |
+| Claude via Anthropic API (runtime) | `claude-sonnet-4-6` (set in local `.env`; the `.env.example` default is `claude-sonnet-4-20250514`) | Runtime LLM for F02, F07, F08, F09, F10, and F11 | 13,429 input and 4,984 output tokens (18,413 total), last 30 days, from the Usage page | $0.03, from the Cost page for the last 30 days (data as of Nov 15, 2026) |
 
 **Representative interactions.** Each item shows what was asked and what was kept.
 
@@ -543,8 +543,8 @@ Commits `fdaf5c5` and `66c3e98` (Section 5, items 4 and 5) were made after the p
 
 - Static review that each Stage 1 feature has a reachable method from both the GUI and the CLI (Section 2).
 - Unit tests cover the domain model, CSV import, categorization, budget service, agent, facade, GUI logic, and the Claude adapter (`src/test/java`). Tests use `MockLlmClient`, so they never call the real API.
-- `mvn test` run locally: [TODO: paste the exact "Tests run" line from the author's terminal].
-- Secrets check: `.env` and `config.local.json` are listed in `.gitignore`, and `.env.example` contains only placeholders. [TODO: before submission, search the git history for the key prefix and confirm no real key was committed.] Any key shown during demos was revoked and replaced locally in `.env`.
+- `mvn test` run locally: `Tests run: 91, Failures: 0, Errors: 0, Skipped: 0`, with `BUILD SUCCESS`.
+- Secrets check: `.env` and `config.local.json` are listed in `.gitignore`, and `.env.example` contains only placeholders. A search of the full repository history (`git log --all -S "sk-ant-"`) found no Anthropic key, and no commit ever added `.env` or `config.local.json`. Any key shown during demos was revoked and replaced locally in `.env`.
 
 **Defects found and corrected.**
 
