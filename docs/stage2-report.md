@@ -25,7 +25,8 @@ If no API key is configured, the application runs with rules-only categorization
 - CSV import supports only the TD, RBC, and generic layouts.
 - The AI saving plan (F11) can return an incomplete answer. The agent sometimes exhausts its 6-step limit while querying spending, and the app then shows a step-limit message instead of a plan. The plan prompt does not include today's date, so the model can choose a month with no data.
 - Savings goals and transactions cannot be edited or deleted in the GUI. Budgets and goals cannot be edited in place. Test data was cleared by resetting the local database.
-- The GUI has minimal empty-state guidance. Ask (F09) shows no offline banner when the API key is missing or invalid, so a failed key can look like an empty reply until checked in the CLI.
+- The GUI has minimal empty-state guidance. With no API key, Ask (F09) shows an "assistant offline" banner and reply. With an invalid key, the GUI does not clearly report the failure, so it can look like an empty reply until checked in the CLI.
+- The required monthly amount for a goal counts whole months from the current month to the deadline month, so contributions in the current month are not included.
 
 # 2. Feature to Implementation Mapping
 
