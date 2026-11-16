@@ -51,6 +51,8 @@ The repository never contains a real API key. Configuration uses a local `.env` 
 
 3. Leave the key blank to run without AI. The app then uses rules-only categorization and an offline assistant.
 
+The AI features (categorization, Ask, recurring and unusual explanations, the monthly recap, and saving plans) need an API key. Without one, they fall back to offline output, and the app still runs.
+
 `.env.example` contains only placeholders. Never commit `.env` or `config.local.json`. The model name is set with `ANTHROPIC_MODEL` in the same file, and `BUDGET_BUDDY_DB` sets the database file (default `budgetbuddy.db`).
 
 ## Run the GUI
