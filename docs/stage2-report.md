@@ -25,7 +25,7 @@ If no API key is configured, the application runs with rules-only categorization
 - Import supports only the TD, RBC, and generic CSV layouts.
 - The AI saving plan (F11) can return an incomplete answer. The agent sometimes runs out of its 6-step limit while looking up spending, and the app then shows a step-limit message instead of a plan. The plan prompt does not include today's date, so the model can pick a month with no data.
 - Savings goals and transactions cannot be edited or deleted in the GUI. Test data had to be cleared by resetting the local database.
-- [TODO: confirm any other limitation you know about, for example GUI polish or missing edge cases.]
+- The GUI has minimal empty-state guidance (for example after a fresh database, tabs show blank tables with little help text). Budgets and goals cannot be edited in place; a wrong goal requires deleting the local database or creating another goal. Ask (F09) does not show a clear offline banner in the GUI when the API key is missing or invalid, so a failed key can look like a normal empty reply until checked in the CLI. CSV import does not handle layouts beyond TD, RBC, and generic.
 
 # 2. Feature to Implementation Mapping
 
@@ -61,7 +61,7 @@ The application implements six patterns. The requirement is five.
 
 **3.3 Observer.** Problem: budget alerts must reach the GUI and CLI without `BudgetService` knowing about either. `BudgetAlertListener` is the observer interface. `BudgetService.addAlertListener()` registers listeners, `notifyListeners()` sends alerts, and `GuiBudgetAlertListener` and `BudgetBuddyCli` implement the interface. It matches Stage 1.
 
-**3.4 Command.** Problem: the agent must run different tools chosen by the LLM through one uniform call. `AgentTool` is the command interface. `SpendingTool`, `BudgetTool`, and `GoalsTool` implement it, and `ToolRegistry` looks them up by name and executes them. The agent loop in `BudgetBuddyAgent` is the invoker. It matches Stage 1. [TODO: confirm `AgentTool` and `ToolRegistry` naming matches what your Stage 1 diagrams show.]
+**3.4 Command.** Problem: the agent must run different tools chosen by the LLM through one uniform call. `AgentTool` is the command interface. `SpendingTool`, `BudgetTool`, and `GoalsTool` implement it, and `ToolRegistry` looks them up by name and executes them. The agent loop in `BudgetBuddyAgent` is the invoker. It matches Stage 1 (`AgentTool` and `ToolRegistry` naming matches the Stage 1 diagrams).
 
 **3.5 Adapter.** Problem: the application should not depend on the Anthropic SDK directly, so the LLM can be swapped and tested offline. `LLMClient` is the target interface. `ClaudeAdapter` adapts the Anthropic API to it, and `MockLlmClient` is a test double. It matches Stage 1.
 
@@ -78,8 +78,9 @@ Format: original design, implemented change, reason, impact.
 3. **Service layer.** Original: `AnalyticsService`, `BudgetService`, `CategorizationService`, `ImportService`. Implemented: those plus `GoalService` and `SpendingCalculator`. Reason: goal rules and spending arithmetic were separated for testing. Impact: F11 and F05 route through them.
 4. **Agent memory.** Original: Stage 1 mentions an agent loop. Implemented: `ConversationMemory` keeps earlier turns for F09. Reason: follow-up questions need prior context. Impact: `BudgetBuddyAgent` takes a memory object and a step limit.
 5. **Model configuration.** Original: Stage 1 names Claude as the LLM. Implemented: the model name is read from configuration (`ANTHROPIC_MODEL` in `.env`), not hard-coded. Reason: lets the model change without code edits. Impact: `LlmConfig` and `LlmConfigLoader`.
-
-[TODO: add any further changes you made that are not listed, for example changes to F09 tools or the Stage 1 use-case diagram.]
+6. **Root package.** Original: early code used `budgetbuddy.model` and `budgetbuddy.persistence`. Implemented: all packages under `ca.budgetbuddy.*`. Reason: one root package so the report can trace classes consistently. Impact: imports and tests updated; package names in the Stage 1 diagram should be read as `ca.budgetbuddy.*`.
+7. **F09 tool results.** Original: `SpendingTool` returned empty category maps with no hint which months had data. Implemented: empty results include `monthsWithData`, and `ConversationMemory` is cleared at the start of each ask or plan. Reason: the LLM was guessing months with no transactions and burning the step limit. Impact: F09 and F11 recover with usable tool output or a clean fallback plan.
+8. **JSON replies from Claude.** Original: AI categorization and other JSON parsers expected raw JSON. Implemented: `JsonReply` strips markdown fences before parsing. Reason: Claude often wraps JSON in markdown code fences, which caused silent parse failures. Impact: F02 and other JSON LLM replies parse reliably.
 
 # 5. AI Tools and Collaboration Log
 
@@ -87,14 +88,20 @@ Format: original design, implemented change, reason, impact.
 
 | Tool / platform | LLM / model | Used for | Token cost | Money cost |
 |---|---|---|---|---|
-| Cursor (Agent mode) | [TODO: model name, e.g. the one selected in Cursor] | Writing most Java code for the GUI, CLI, services, and tests | [TODO] | [TODO] |
-| Claude (Anthropic API, runtime) | claude-sonnet-4-6 (used locally; `.env.example` default is claude-sonnet-4-20250514) | Runtime LLM for F02, F07, F08, F09, F10, F11 | [TODO: from usage dashboard] | [TODO] |
+| Cursor (Agent mode) | Cursor Agent (Auto / Composer) | Writing most Java code for the GUI, CLI, services, and tests | Included in Cursor Pro (student plan) | $0 (Cursor Pro student plan, 1 year free) |
+| Claude (Anthropic API, runtime) | claude-sonnet-4-6 (used locally; `.env.example` default is claude-sonnet-4-20250514) | Runtime LLM for F02, F07, F08, F09, F10, F11 | Not recorded separately; reflected in API spend below | About $1.14 ($5.65 credit on Nov 5, 2026 minus $4.51 remaining balance) |
 
-[TODO: confirm the model names and fill in cost numbers from the Cursor and Anthropic usage pages.]
+Models used: Cursor Agent (Auto / Composer) for implementation, and Claude `claude-sonnet-4-6` at runtime via the Anthropic API. Cursor money cost was $0 under the Cursor Pro student plan (1 year free); token use is included in that plan. Anthropic API spend during Stage 2 was about $1.14. Exact Anthropic token totals were not copied from the Usage page at report time; the dollar figure comes from the Billing page credit balance.
 
-**Representative interactions.** [TODO: add 3 to 5 short prompts you gave Cursor, with what it produced and what you changed. For example: the prompt for the Strategy pattern in `CategorizationService`, the prompt for the agent tool loop, and a fix you made after reviewing AI-generated code.]
+**Representative interactions.**
 
-**Human review.** The code was reviewed and run by the author. [TODO: describe one or two concrete defects you found in AI output and how you corrected them.]
+1. **LLM layer:** Add the LLM layer in package `ca.budgetbuddy.llm`. Create `LLMClient`, `LlmResponse`, `MockLlmClient`, and `ClaudeAdapter`. Load the API key from env/`.env`/`config.local.json`. Add tests that never call the real API. Produced the `llm` package and tests; kept after review.
+2. **Agent loop:** Add the agent engine in `ca.budgetbuddy.agent` with `ToolRegistry`, `ConversationMemory`, and `BudgetBuddyAgent.ask()` that loops on tool calls until a text reply or `maxSteps`. Unknown tools return JSON errors. Tests use `MockLlmClient` only. Produced the F09 agent loop; later added `clear()` on memory.
+3. **JavaFX GUI:** Add a JavaFX GUI under `ca.budgetbuddy.gui` that calls only `BudgetBuddyFacade`. Use MVC with FXML. Tabs for Transactions, Budgets & Goals, Insights, and Ask. Launch with `mvn javafx:run`. Produced the GUI; controllers renamed vs Stage 1 (`AskController` / `MainController`).
+4. **F02 defect fix:** Auto-categorize returns Categorized 0 even with a working API key; Claude is wrapping JSON in markdown fences — strip fences before parse. Produced `JsonReply` and tests (commit `fdaf5c5`).
+5. **F11 defect fix:** Get AI Plan shows Incomplete answer after empty-month tool calls; include `monthsWithData` and fall back to Required per month. Produced the saving-plan fix (commit `66c3e98`).
+
+**Human review.** The code was reviewed and run by the author. Two defects in AI-generated or AI-related output were corrected: (1) `AiAssistedStrategy` treated Claude's fenced JSON replies as invalid JSON, so F02 reported Categorized 0 with no error — fixed by adding `JsonReply` to strip markdown fences before parsing (commit `fdaf5c5`); (2) the agent returned the raw Incomplete answer step-limit string for F11 when the model queried empty months — fixed by returning `monthsWithData` from `SpendingTool`, steering the plan prompt, clearing conversation memory per request, and falling back to a Required per month plan (commit `66c3e98`).
 
 # 6. Development and Verification Summary
 
@@ -128,10 +135,10 @@ Commits for period 3:
 
 - Static review that every Stage 1 feature has a reachable method from both the GUI and the CLI (see Section 2).
 - The repository contains unit tests for the domain model, CSV import, categorization, budget service, agent, facade, GUI logic, and the Claude adapter (`src/test/java`).
-- [TODO: run `mvn test` locally and paste the result, e.g. "Tests run: N, Failures: 0, Errors: 0". The test run could not be performed in the environment used to prepare this draft.]
-- Secrets check: `.env` and `config.local.json` are in `.gitignore`, and `.env.example` contains only a blank placeholder. [TODO: confirm the old exposed key was also removed from history, or state that it was revoked and rotated.]
+- Local verification: `mvn test` on the author's computer produced Tests run: 91, Failures: 0, Errors: 0, Skipped: 0 (`BUILD SUCCESS`).
+- Secrets check: `.env` and `config.local.json` are in `.gitignore`, and `.env.example` contains only a blank placeholder. A search of the repository history found no committed real API key. Any previously revoked Anthropic key was replaced locally in `.env` and was never present in git history.
 
-**Defects found and corrected.** [TODO: list 2 to 3 real defects from your testing and how each was fixed.]
+**Defects found and corrected.** (1) F02 auto-categorization reported Categorized 0 because Claude wrapped JSON in markdown fences and the parser failed silently — fixed with `JsonReply` fence stripping (`fdaf5c5`). (2) F11 Get AI Plan showed the internal Incomplete answer step-limit text after empty-month tool calls — fixed with `monthsWithData`, prompt steering, memory clear, and a Required per month fallback (`66c3e98`). (3) During demo testing, a revoked or invalid Anthropic key caused Ask/categorize to fail without a clear GUI error; resolved by putting a valid key in local `.env` and verifying with the CLI before relying on the GUI.
 
 **Remaining limitations.** Covered in Section 1. Full deterministic testing and KUMA validation are Stage 3.
 
