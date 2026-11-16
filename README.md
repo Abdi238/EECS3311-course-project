@@ -7,6 +7,16 @@ Budget Buddy imports bank CSV exports, categorizes transactions, tracks monthly 
 
 The AI features use Claude through the Anthropic API. AI output is informational and is not financial advice.
 
+## Project reports
+
+- [Stage 1 report](https://github.com/Abdi238/EECS3311-course-project/blob/main/docs/Stage1_Report.md): the design (features, classes, patterns, use cases, sequence diagrams).
+- [Stage 2 report](https://github.com/Abdi238/EECS3311-course-project/blob/main/docs/stage2-report.md): the implementation, changes from Stage 1, AI collaboration log, weekly commits, and the demonstration index.
+- [Stage 2 report (PDF)](https://github.com/Abdi238/EECS3311-course-project/blob/main/docs/stage2-report.pdf): the same report as a PDF, for submission.
+
+## Demonstration videos
+
+The index of feature videos (F01 to F11) is in Section 7 of the [Stage 2 report](https://github.com/Abdi238/EECS3311-course-project/blob/main/docs/stage2-report.md).
+
 ## Prerequisites
 
 - JDK 21
