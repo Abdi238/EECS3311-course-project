@@ -75,7 +75,25 @@ The application implements six patterns. The requirement is five.
 
 **3.6 Model-View-Controller.** *Problem:* JavaFX views should not contain business logic. Views are the FXML files under `src/main/resources/ca/budgetbuddy/gui/`. Controllers (`MainController`, `TransactionsController`, `BudgetsGoalsController`, `InsightsController`, `AskController`) handle events. Logic classes (`TransactionsLogic`, `BudgetsGoalsLogic`, `InsightsLogic`, `AskLogic`) hold the testable presentation logic. Models are in `ca.budgetbuddy.model`. *Stage 1:* matches, with the controller names listed in Section 4.
 
-**UML class diagram.** [TODO: add the updated UML class diagram of the implemented system, and the updated use-case and sequence diagrams for F09 and F11 if they differ from Stage 1.]
+**3.7 Updated UML class diagram.** The implemented system is shown in three parts, matching the three-part Stage 1 class diagram. Part 1 covers the presentation layer and the facade, part 2 covers services, the agent, and the LLM layer, and part 3 covers the domain model and persistence. The Mermaid source for each part is in `docs/diagrams/`.
+
+![Class diagram part 1: presentation and facade](/home/claude/uml/01-class-presentation-facade.png){width=100%}
+
+![Class diagram part 2: services, agent, and LLM](/home/claude/uml/02-class-services-agent-llm.png){width=100%}
+
+![Class diagram part 3: domain and persistence](/home/claude/uml/03-class-domain-persistence.png){width=100%}
+
+**3.8 Updated sequence diagrams.** The F09 and F11 sequence diagrams differ from Stage 1 (SD05 and SD06), so they are updated below. The F10 part of SD06 is kept, with the presentation participant changed to `InsightsController`. The use-case diagram (UC01 to UC11) does not change, since no use cases were added or removed.
+
+![Sequence diagram SD05 (updated): Ask Budget Buddy (F09)](/home/claude/uml/04-seq-f09-ask.png){width=100%}
+
+![Sequence diagram SD06 (updated): Monthly Summary (F10) and Saving Plan (F11)](/home/claude/uml/05-seq-f10-f11.png){width=100%}
+
+**What changed from Stage 1 (diagrams).**
+
+- **Class diagram:** The root package is now `ca.budgetbuddy.*`. `ChatController` became `AskController`, and `DashboardController` was removed. Its monthly summary moved to `InsightsController`, and `MainController` is the shell. `GuiBudgetAlertListener` replaces the dashboard alert listener. `GoalService`, `SpendingCalculator`, `JsonReply`, `LlmConfig`, `LlmConfigLoader`, and `MockLlmClient` were added. The GUI logic classes separate presentation logic from the controllers.
+- **F09 sequence (SD05):** `AskController` replaces `ChatController`. The agent clears `ConversationMemory` at the start of each request. `ToolRegistry` returns JSON errors for unknown tools and bad arguments. Empty spending results include `monthsWithData`. The loop ends at a text reply or after six steps, and `getLastToolsUsed()` is shown afterward.
+- **F11 sequence (SD06):** The saving plan starts at `BudgetsGoalsController` and goes through `generateSavingPlan`, which loads the goal and calls `proposeSavingPlan`. That method clears memory and builds the prompt with `savingPlanPrompt`. If the answer is incomplete, empty, or fails, the facade shows the required monthly amount instead of the raw "Incomplete answer" text.
 
 # 4. Changes and Rationale
 
