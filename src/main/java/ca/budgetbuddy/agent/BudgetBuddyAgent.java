@@ -12,9 +12,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Runs the question-and-tool loop. The model either answers in text or names a
@@ -24,22 +26,33 @@ import java.util.Objects;
 public final class BudgetBuddyAgent {
     public static final int DEFAULT_MAX_STEPS = 6;
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final String PROMPT =
-            "You are Budget Buddy. Answer the user's personal finance question. "
-                    + "Use a tool when you need data, then answer in text.";
 
     private final LLMClient llm;
     private final ToolRegistry tools;
     private final ConversationMemory memory;
     private final int maxSteps;
+    private final Supplier<List<YearMonth>> monthsWithData;
     private final List<String> lastToolsUsed = new ArrayList<>();
     private boolean lastAnswerIncomplete;
 
     public BudgetBuddyAgent(LLMClient llm, ToolRegistry tools) {
-        this(llm, tools, new ConversationMemory(), DEFAULT_MAX_STEPS);
+        this(llm, tools, new ConversationMemory(), DEFAULT_MAX_STEPS, List::of);
+    }
+
+    public BudgetBuddyAgent(LLMClient llm, ToolRegistry tools, Supplier<List<YearMonth>> monthsWithData) {
+        this(llm, tools, new ConversationMemory(), DEFAULT_MAX_STEPS, monthsWithData);
     }
 
     public BudgetBuddyAgent(LLMClient llm, ToolRegistry tools, ConversationMemory memory, int maxSteps) {
+        this(llm, tools, memory, maxSteps, List::of);
+    }
+
+    public BudgetBuddyAgent(
+            LLMClient llm,
+            ToolRegistry tools,
+            ConversationMemory memory,
+            int maxSteps,
+            Supplier<List<YearMonth>> monthsWithData) {
         this.llm = Objects.requireNonNull(llm, "llm");
         this.tools = Objects.requireNonNull(tools, "tools");
         this.memory = Objects.requireNonNull(memory, "memory");
@@ -47,6 +60,7 @@ public final class BudgetBuddyAgent {
             throw new IllegalArgumentException("maxSteps must be at least 1.");
         }
         this.maxSteps = maxSteps;
+        this.monthsWithData = Objects.requireNonNull(monthsWithData, "monthsWithData");
     }
 
     public String ask(String question) {
@@ -55,7 +69,7 @@ public final class BudgetBuddyAgent {
         lastAnswerIncomplete = false;
         memory.clear();
         memory.add("user", question);
-        return runLoop(PROMPT);
+        return runLoop(PromptBuilder.askPrompt(YearMonth.now(), monthsWithData.get()));
     }
 
     /**
@@ -66,7 +80,7 @@ public final class BudgetBuddyAgent {
         lastToolsUsed.clear();
         lastAnswerIncomplete = false;
         memory.clear();
-        String prompt = PromptBuilder.savingPlanPrompt(goal);
+        String prompt = PromptBuilder.savingPlanPrompt(goal, YearMonth.now(), monthsWithData.get());
         memory.add("user", prompt);
         return runLoop(prompt);
     }

@@ -115,7 +115,7 @@ public final class BudgetBuddyFacade implements AutoCloseable {
                     new BudgetTool(budgetRepository, transactions),
                     new GoalsTool(goals)
             ));
-            this.agent = new BudgetBuddyAgent(llm, registry);
+            this.agent = new BudgetBuddyAgent(llm, registry, calculator::monthsWithData);
         }
     }
 
