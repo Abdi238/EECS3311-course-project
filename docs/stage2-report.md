@@ -557,18 +557,18 @@ Commits `fdaf5c5` and `66c3e98` (Section 5, items 4 and 5) were made after the p
 
 # 7. Demonstration Index
 
-Each feature has its own video. Both the GUI and the CLI are shown across the set. F09 is demonstrated in the GUI only. All links are shared publicly on Google Drive, and no API keys or credentials appear in the recordings.
+Each feature has its own video. Both the GUI and the CLI are shown across the set. F04 is demonstrated in the GUI only. All links are shared publicly on Google Drive, and no API keys or credentials appear in the recordings.
 
 | Feature | Interface shown | Video |
 |---|---|---|
 | F01 Import transactions | GUI and CLI | [F01 video](https://drive.google.com/file/d/1edJRtekiVCy1tNSHZtkapC8zIw6ISOwF/view?usp=drive_link) |
-| F02 AI auto-categorization | GUI | [F02 video](https://drive.google.com/file/d/1mmB7g29cfgacoRwTIsPxu5ploezEjeQd/view?usp=drive_link) |
-| F03 Category correction and learning | GUI | [F03 video](https://drive.google.com/file/d/1VnK_T5DSReParZvzGUhb4vScgT2HXuUe/view?usp=drive_link) |
+| F02 AI auto-categorization | GUI and CLI | [F02 GUI video](https://drive.google.com/file/d/1mmB7g29cfgacoRwTIsPxu5ploezEjeQd/view?usp=drive_link), [F02 CLI video](https://drive.google.com/file/d/1IuBSHHc4pOLSCaFGiYHFq1yBoOFRcMsQ/view?usp=sharing) |
+| F03 Category correction and learning | GUI and CLI | [F03 GUI video](https://drive.google.com/file/d/1VnK_T5DSReParZvzGUhb4vScgT2HXuUe/view?usp=drive_link), [F03 CLI video](https://drive.google.com/file/d/11m6AwW-Cr7p3oinZLpvCZepA4Qf4BWo3/view?usp=sharing) |
 | F04 Budget management | GUI | [F04 video](https://drive.google.com/file/d/12HoTtHiatxse6n-DuCJNfGgts0wKkDm8/view?usp=drive_link) |
 | F05 Budget tracking and alerts | GUI and CLI | [F05 video](https://drive.google.com/file/d/14fdMME_70fTajs-fI3orGKiu19BqT6aZ/view?usp=drive_link) |
 | F06 Spending trends | GUI and CLI | [F06 video](https://drive.google.com/file/d/1PRUUtAXOKR_kUGtTG6PhCdF67fk8r4co/view?usp=drive_link) |
 | F07 Recurring payments | GUI and CLI | [F07 video](https://drive.google.com/file/d/14EzGuTKlZy-7jtr5Va4UtqXCCS-VBy4W/view?usp=drive_link) |
 | F08 Unusual expenses | GUI and CLI | [F08 video](https://drive.google.com/file/d/1xDQFumH5AUeYzkWPH0XtSIQeP9P4m8tE/view?usp=drive_link) |
-| F09 Ask Budget Buddy | GUI | [F09 video](https://drive.google.com/file/d/1S2oPRilMdNJgTRyi2V3XgLCrZlkkaDbx/view?usp=drive_link) |
-| F10 Monthly summary | GUI and CLI | [F10 video](https://drive.google.com/file/d/1YPsWSvFhtETNshCNymXdtcsIgH9Q7HIQ/view?usp=drive_link) |
-| F11 Savings goals and AI plan | GUI and CLI | [F11 video](https://drive.google.com/file/d/16TmqAJia6-IpeV8NJQrQ5VcxDdfwrX0L/view?usp=drive_link) |
+| F09 Ask Budget Buddy | GUI and CLI | [F09 GUI video](https://drive.google.com/file/d/1S2oPRilMdNJgTRyi2V3XgLCrZlkkaDbx/view?usp=drive_link), [F09 CLI video](https://drive.google.com/file/d/1Ic_IrIvCt5cNES34f6YePHqmyhueNHS3/view?usp=sharing) |
+| F10 Monthly summary | GUI and CLI | [F10 GUI video](https://drive.google.com/file/d/1YPsWSvFhtETNshCNymXdtcsIgH9Q7HIQ/view?usp=drive_link), [F10 CLI video](https://drive.google.com/file/d/1YQY6upCBiWEEH61B1Ts9c4EeDktoP0Y6/view?usp=sharing) |
+| F11 Savings goals and AI plan | GUI and CLI | [F11 GUI video](https://drive.google.com/file/d/16TmqAJia6-IpeV8NJQrQ5VcxDdfwrX0L/view?usp=drive_link), [F11 CLI video](https://drive.google.com/file/d/1RYU2Dv9qSUOAhwZy2ZBzFt2KwSXDMDnX/view?usp=sharing) |
