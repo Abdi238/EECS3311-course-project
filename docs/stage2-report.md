@@ -26,6 +26,7 @@ If no API key is configured, the application runs with rules-only categorization
 - The AI saving plan (F11) can return an incomplete answer. The agent sometimes exhausts its 6-step limit while querying spending, and the app then shows a step-limit message instead of a plan. The plan prompt does not include today's date, so the model can choose a month with no data.
 - Savings goals and transactions cannot be edited or deleted in the GUI. Budgets and goals cannot be edited in place. Test data was cleared by resetting the local database.
 - The GUI has minimal empty-state guidance. With no API key, Ask (F09) shows an "assistant offline" banner and reply. With an invalid key, the GUI does not clearly report the failure, so it can look like an empty reply until checked in the CLI.
+- The F09 Ask answer can name the wrong year. In one run it mentioned October 2024 while reporting October 2026, which points to the prompt not including today's date. The same gap affects F11 (see below).
 - The required monthly amount for a goal counts whole months from the current month to the deadline month, so contributions in the current month are not included.
 
 # 2. Feature to Implementation Mapping
@@ -48,7 +49,7 @@ Stage 1 details are in `docs/Stage1_Report.md`. All features keep their Stage 1 
 
 **How the classes collaborate.** Each entry starts at the user input and ends at the result.
 
-- **F01, import (deterministic, with an AI step through F02).** `TransactionsController` or `budgetbuddy import` calls `BudgetBuddyFacade.importTransactions()`. `ImportService` converts each row with `parseRow()` using the chosen bank layout and skips duplicates. New rows go to `CategorizationService`, and `TransactionRepository` saves them. The facade then asks `BudgetService` to recheck budgets.
+- **F01, import (deterministic, with an AI step through F02).** `TransactionsController` or `budgetbuddy import` calls `BudgetBuddyFacade.importTransactions()`. `ImportService` converts each row with `parseRow()` using the chosen bank layout and skips duplicates. `TransactionRepository` saves the new rows as UNCATEGORIZED. Categorization is a separate step (F02), and the facade asks `BudgetService` to recheck budgets.
 - **F02, categorization (hybrid).** `CategorizationService` calls the active `CategorizationStrategy`. `RuleBasedStrategy` applies saved merchant rules first. `AiAssistedStrategy` sends remaining rows through `PromptBuilder` to `ClaudeAdapter`, parses the reply, and keeps any suggestion below confidence 0.6 as UNCATEGORIZED. Without a key, the service uses rules only.
 - **F03, correction and learning (hybrid).** Double-clicking the Category cell in `TransactionsController` opens the change dialog. `BudgetBuddyFacade.correctCategory()` passes the change to `CategorizationService`, which marks the transaction as set by the user. If "remember this merchant" is checked, `CategoryRuleRepository` saves a rule, and other transactions from that merchant that the user has not set are updated.
 - **F04, budgets (deterministic).** `BudgetsGoalsController` calls `BudgetBuddyFacade.saveBudget()`. `BudgetService` validates the amount and month and stores the `Budget` through `BudgetRepository`. `copyBudgets()` copies a month's budgets to the next month.
@@ -60,43 +61,183 @@ Stage 1 details are in `docs/Stage1_Report.md`. All features keep their Stage 1 
 - **F10, monthly summary (hybrid).** `AnalyticsService.generateMonthlySummary()` computes the figures with `buildMonthlyStats()`. `BudgetBuddyAgent.writeMonthlySummary()` asks the LLM for the written recap, using `PromptBuilder`. `InsightsController` shows the result.
 - **F11, savings goals and AI plan (hybrid).** `BudgetsGoalsController` calls the facade, which calls `GoalService` to create goals and add contributions through `GoalRepository`. `generateSavingPlan()` runs the agent with `GoalsTool` and `SpendingTool`. If the agent does not return a usable plan, the app shows a fallback plan with the required monthly amount.
 
-## 2.1 Feature walkthrough: F01 Import transactions
+## 2.1 Feature walkthrough
 
-**Original requirement (Stage 1, F01 Import Transactions):** Loads a bank CSV export into the app. Each bank uses different columns and date formats, so the importer knows the layout for TD and RBC exports. Any other bank can be imported by saving its export as a generic CSV with date, description, and amount columns. Input: a CSV file and its format. Output: saved transactions, a refreshed table, and a summary (imported, duplicates skipped, bad rows). Expected workflow: read rows, convert each to a transaction, skip duplicates, categorize (F02), save, and recheck budgets (F05). Errors: an unreadable file shows an error, mismatched columns ask for another format, and bad rows are skipped and listed in the summary.
+Each feature below states its Stage 1 requirement, how it is implemented, screenshots from the run, and any change from Stage 1. Screenshots were taken from the CLI and GUI runs listed in Section 7.
 
-**How it is implemented.** The user picks a bank CSV layout (TD, RBC, or GENERIC) and a file. The GUI (`TransactionsController`) and the CLI (`budgetbuddy import`) both call `BudgetBuddyFacade.importTransactions()`. `ImportService` converts each row with `parseRow()` using the chosen layout, and rows already in the database are skipped. New rows go through `CategorizationService`, and `TransactionRepository` saves them. The facade then asks `BudgetService` to recheck budgets. Patterns: Facade and MVC.
+### F01 Import Transactions
+
+**Original requirement (Stage 1):** Loads a bank CSV export into the app. The importer knows the layout for TD and RBC exports, and any other bank can be imported as a generic CSV with date, description, and amount columns. Input: a CSV file and its format. Output: saved transactions, a refreshed table, and a summary of imported, duplicate, and bad rows. Errors: an unreadable file shows an error, mismatched columns ask for another format, and bad rows are skipped and listed.
+
+**How it is implemented.** The user picks a bank layout (TD, RBC, or GENERIC) and a file. The GUI (`TransactionsController`) and the CLI (`budgetbuddy import`) both call `BudgetBuddyFacade.importTransactions()`. `ImportService` converts each row with `parseRow()` using the chosen layout, and rows already in the database are skipped. `TransactionRepository` saves the new rows, and the facade asks `BudgetService` to recheck budgets. Patterns: Facade and MVC.
 
 **Screenshots.**
 
-![Figure 1: The Import bank CSV dialog with the GENERIC layout and generic-sample.csv selected](screenshots/f01-gui-import-dialog.png)
+![Figure 1: Import dialog](../f01-gui-import-dialog.png)
 
 *Figure 1. The Import bank CSV dialog, with the GENERIC layout selected and `samples/generic-sample.csv` chosen.*
 
-![Figure 2: The Transactions tab after importing generic-sample.csv](screenshots/f01-gui-result.png)
+![Figure 2: Transactions tab after import](../f01-gui-result.png)
 
-*Figure 2. The Transactions tab after the import. The banner reports five imported transactions. Category shows UNCATEGORIZED because Auto-Categorize (F02) has not run yet.*
+*Figure 2. The Transactions tab after the import. The banner reports five imported transactions, and each Category shows UNCATEGORIZED until categorization runs (F02).*
 
-![Figure 3: CLI output from the F01 import command](screenshots/f01-cli-import.png)
+![Figure 3: CLI import output](../f01-cli-import.png)
 
-*Figure 3. The F01 import from the command line. The command `import samples/generic-sample.csv --bank GENERIC` reports five transactions imported from the same file.*
+*Figure 3. The F01 import from the command line, reporting five transactions imported from `generic-sample.csv`.*
 
-**Changes from Stage 1.** None. F01 keeps its Stage 1 design (Section 4, item 1).
+**Changes from Stage 1.** Stage 1 runs categorization automatically after import. The implementation saves imported rows as UNCATEGORIZED, and categorization runs as a separate step (`categorize` in the CLI, Auto-Categorize in the GUI). Impact: imported rows show UNCATEGORIZED until that step runs.
 
-## 2.2 Feature walkthrough: F11 Savings Goals and AI Saving Plan
+### F02 AI Auto-Categorization
 
-**Original requirement (Stage 1, F11):** The user creates savings goals (name, target, deadline) and logs contributions. When asked, the agent looks at recent spending through its tools and suggests a plan: how much to save per month and which spending to cut. Input: goal details, contribution amounts, and a goal ID for a plan. Output: the goal with progress, and a plan with a monthly target, three to five suggestions, and whether the goal is realistic. Expected workflow: save the goal, start the agent with a planning prompt on request, let the LLM call `SpendingTool`, then display the plan. Errors: a target that is not positive or a deadline in the past is a validation error, a reached goal needs no plan, and if the LLM is unavailable only the required monthly amount is shown.
+**Original requirement (Stage 1):** Gives each transaction a category. Saved rules handle known merchants first, then the LLM categorizes the rest, and each transaction records its source (rule, AI, or user) and a confidence score. An Auto-Categorize button re-runs the step on uncategorized rows. Errors: without a key the app uses rules only; an invalid reply or unknown category leaves the transaction uncategorized; user-set categories are never overwritten.
 
-**How it is implemented.** `BudgetsGoalsController` (GUI) and `budgetbuddy goal` (CLI) call `BudgetBuddyFacade`, which uses `GoalService` to save goals and contributions through `GoalRepository`. `generateSavingPlan()` loads the goal and calls `BudgetBuddyAgent.proposeSavingPlan()`, which clears conversation memory and runs the agent with `GoalsTool` and `SpendingTool`. If the agent does not return a usable plan, the app shows the required monthly amount instead. Patterns: Command, Adapter, and Facade.
-
-**How the required monthly amount is calculated.** `SavingsGoal.requiredPerMonth()` divides the remaining amount by the number of whole months from the current month to the deadline month. The current month is not counted. This run was made on November 23, 2026, with a deadline of December 31, 2026. Only December is counted, so the full $1,000.00 target is the required amount per month. The figure is high because the deadline is about five weeks away. A later deadline would give a lower figure, for example about $142.86 per month for a deadline of June 30, 2027.
+**How it is implemented.** `CategorizationService` calls the active `CategorizationStrategy`. `RuleBasedStrategy` applies saved merchant rules first. `AiAssistedStrategy` sends the rest through `PromptBuilder` to `ClaudeAdapter`, parses the reply with `JsonReply`, and keeps any suggestion below confidence 0.6 as UNCATEGORIZED. Without a key, the service uses rules only. Patterns: Strategy and Adapter.
 
 **Screenshots.**
 
-![Figure 10: CLI output for the goal add and goal plan commands](screenshots/f11-cli-plan.png)
+![Figure 4: CLI categorize output](../f02-cli-categorize.png)
 
-*Figure 10. The goal `NewCar` is saved as goal 1, with a target of 1000.00 and a deadline of 2026-12-31. The plan reports a required amount of 1000.00 per month for the run from November 23, 2026 to December 31, 2026.*
+*Figure 4. The `categorize` command on the five imported transactions, reporting five categorized.*
 
-**Changes from Stage 1.** The plan has no separate contribution command in the CLI. Contributions are added in the GUI only. The plan can still be incomplete on some runs, and then the app shows the required amount (Section 1). The AI text may include suggestions that do not fit a short deadline, such as automatic transfers, so the plan is informational only.
+**Changes from Stage 1.** Stage 1 asks for low-confidence results to be highlighted for review. The implementation keeps those transactions as UNCATEGORIZED and does not save a separate review flag.
+
+### F03 Category Correction and Learning
+
+**Original requirement (Stage 1):** Lets the user fix a category. If the user chooses to remember it, a rule is saved for that merchant, applied to matching transactions now, and used for future imports and as an example for the LLM. Errors: a missing transaction shows an error, and an existing merchant rule is confirmed before it is replaced.
+
+**How it is implemented.** `BudgetBuddyFacade.correctCategory()` passes the change to `CategorizationService`, which marks the transaction as set by the user (source USER). When remember is set, `CategoryRuleRepository` saves the merchant rule, and other transactions from that merchant that the user has not set are updated. Budgets are then rechecked. The GUI opens the change dialog from a double-click on the Category cell. Patterns: Facade and Strategy.
+
+**Screenshots.**
+
+![Figure 5: Correction and summary before and after](../f03-cli-correction.png)
+
+*Figure 5. The summary before the correction, then `recategorize 2 OTHER --remember` with its output, then the summary after. Campus Coffee Shop moves to OTHER, and its other unset transaction follows.*
+
+![Figure 6: New row imported and categorized](../f03-cli-new-row.png)
+
+*Figure 6. A new Campus Coffee Shop row is imported and categorized after the rule was saved.*
+
+![Figure 7: Summary after the new row](../f03-cli-summary-after.png)
+
+*Figure 7. The summary after the new row. OTHER totals 15.50, which is 11.00 plus the new 4.50, so the rule applied to the new transaction.*
+
+**Changes from Stage 1.** No change in behaviour. The CLI reports the remembered merchant in its output, and the rule also updates other unset transactions from that merchant.
+
+### F04 Budget Management
+
+**Original requirement (Stage 1):** Create, edit, and delete monthly spending limits per category, and copy last month's budgets into a new month. Input: month, category, and amount. Errors: a non-positive amount is a validation error, and an existing budget for the same category and month is confirmed before it is replaced.
+
+**How it is implemented.** `BudgetsGoalsController` calls `BudgetBuddyFacade.saveBudget()`. `BudgetService` validates the amount and month and stores the `Budget` through `BudgetRepository`. `copyBudgets()` copies a month's budgets to the next month, and the facade rechecks budgets afterwards. Patterns: Facade and MVC.
+
+**Screenshots.**
+
+![Figure 8: CLI budget set, status, and invalid amount](../f04-cli-budget.png)
+
+*Figure 8. `budget set GROCERIES 100.00`, then `budget status`, then `budget set GROCERIES 120.00` replacing the limit, then an invalid amount that prints "Amount must be a number: abc."*
+
+**Changes from Stage 1.** The CLI replaces an existing limit without asking for confirmation, which differs from the Stage 1 requirement for the GUI. The shown run confirms that a second `budget set` replaces the earlier limit.
+
+### F05 Budget Tracking and Alerts
+
+**Original requirement (Stage 1):** Shows how much of each budget has been used and raises an alert at 80% (warning) and 100% (exceeded), sent to whichever interface is running, using fixed templates so no LLM is needed. Errors: a category with spending but no budget shows "No budget set," and a level already alerted in the month is not alerted again.
+
+**How it is implemented.** After `BudgetService.recalculate()` totals the month's spending, any budget that reaches a new level notifies every registered `BudgetAlertListener`. `GuiBudgetAlertListener` and `BudgetBuddyCli` implement the interface, and the CLI prints the message. Patterns: Observer.
+
+**Screenshots.**
+
+![Figure 9: CLI budget alerts](../f05-cli-alerts.png)
+
+*Figure 9. The warning "Dining budget at 91.7%" when the limit is set, then "Dining budget at 133.3%" after the over-budget row is categorized.*
+
+**Changes from Stage 1.** Stage 1 says alerts follow an import, a correction, or a budget change. The run shows the alert also follows the `categorize` command, so that command is one of the triggers.
+
+### F06 Spending Trends and Charts
+
+**Original requirement (Stage 1):** Shows spending over a range of months: a pie chart by category, a bar chart per month, and a table with month-over-month change. The CLI prints a text table. Errors: a start month after the end month is a validation error, and an empty range shows an empty state.
+
+**How it is implemented.** `InsightsController` passes the request through `InsightsLogic` to the facade. `AnalyticsService.getTrends()` builds `MonthlySummary` values from stored transactions, and the view displays them. Patterns: Facade and MVC.
+
+**Screenshots.**
+
+![Figure 10: CLI trends output](../f06-cli-trends.png)
+
+*Figure 10. `trends --from 2026-10 --to 2026-10`, showing October 2026 with zero income and total spending of 95.51.*
+
+**Changes from Stage 1.** The CLI prints one line per month with income and spending. It does not print the month-over-month change column that Stage 1 describes for the table. The charts are in the GUI only.
+
+### F07 Recurring Payment Detection
+
+**Original requirement (Stage 1):** Finds charges that repeat on a regular schedule (weekly, monthly, or yearly). The LLM then labels each one as a subscription or a regular bill and gives it a readable name. Input: the last six months of transactions. Output: name, amount, frequency, next expected date, and subscription flag. Errors: under three months of data shows a warning, and an unavailable LLM shows the list without labels.
+
+**How it is implemented.** `AnalyticsService.detectRecurring()` groups charges by merchant, keeps merchants with at least three charges at regular intervals and similar amounts, and returns `RecurringPayment` objects. `BudgetBuddyAgent.labelSubscriptions()` then asks the LLM to label them. Patterns: Facade and Adapter.
+
+**Screenshots.**
+
+![Figure 11: CLI recurring output](../f07-cli-recurring.png)
+
+*Figure 11. `recurring` lists Streamline Music at 12.99, monthly, with the next expected date of 2026-11-10 and the subscription flag set to true.*
+
+**Changes from Stage 1.** In this run the output shows the merchant name as the label, not a separate readable name. The report does not claim an LLM label for this run, and the AI labelling depends on the API key being set.
+
+### F08 Unusual Expense Detection
+
+**Original requirement (Stage 1):** Flags transactions much larger than usual for their category, and the LLM explains each one in plain language. Input: the selected month, with the previous three months as a baseline. Output: flagged transactions with explanations.
+
+**How it is implemented.** `AnalyticsService.detectUnusual()` flags transactions above three times the category's average over the prior three months, and new merchants charging more than $200, as `Anomaly` objects. `BudgetBuddyAgent.explainAnomalies()` asks the LLM to explain them. Patterns: Facade and Adapter.
+
+**Screenshots.**
+
+![Figure 12: CLI unusual output](../f08-cli-unusual.png)
+
+*Figure 12. `unusual --month 2026-10` flags Laptop Repair Centre at 240.00 with the reason "New merchant over $200."*
+
+**Changes from Stage 1.** The explanation in this run is the reason text for the rule that flagged the item. The report does not claim a separate LLM explanation for this run.
+
+### F09 Ask Budget Buddy
+
+**Original requirement (Stage 1):** The main agent feature. The user asks a plain-English question, and the agent uses tools to get real figures before it answers. It remembers the conversation, so follow-up questions work. Output: the answer and the list of tools used. Errors: a tool failure is sent back to the LLM, the step limit returns a partial answer, and an unavailable API shows an offline message.
+
+**How it is implemented.** `BudgetBuddyFacade.ask()` calls `BudgetBuddyAgent.ask()`. The agent sends the conversation and the tool list from `ToolRegistry` to `ClaudeAdapter`. When the LLM requests a tool, `ToolRegistry.execute()` runs it, and `SpendingTool`, `BudgetTool`, and `GoalsTool` read from the services. `ConversationMemory` keeps the turns, and the loop ends at a text reply or six steps. Patterns: Command, Adapter, and Facade.
+
+**Screenshots.**
+
+![Figure 13: CLI ask answer](../f09-cli-ask.png)
+
+*Figure 13. The `ask` command answering a question about October spending, with the tools used listed below the answer. The answer also names the wrong year for part of the text (see Section 1).*
+
+![Figure 14: CLI ask offline](../f09-cli-ask-offline.png)
+
+*Figure 14. With `.env` renamed so no key is loaded, the same command prints "assistant offline."*
+
+**Changes from Stage 1.** The answer can name the wrong year. In the shown run it mentions October 2024 while reporting October 2026, which is a limitation of the current prompt. The offline path matches the Stage 1 requirement.
+
+### F10 Monthly Summary
+
+**Original requirement (Stage 1):** A short recap of a month. Java calculates income, spending, top categories, and budget results, then the LLM writes a short summary with three saving tips based only on those numbers. Output: the stats with the written recap. Errors: a month with no transactions shows an error, and an unavailable LLM shows the stats only.
+
+**How it is implemented.** `AnalyticsService.generateMonthlySummary()` computes the figures with `buildMonthlyStats()`. `BudgetBuddyAgent.writeMonthlySummary()` asks the LLM for the recap, using `PromptBuilder`. `InsightsController` shows the result in the GUI, and the CLI prints it. Patterns: Facade and Adapter.
+
+**Screenshots.**
+
+![Figure 15: CLI summary](../f10-cli-summary.png)
+
+*Figure 15. `summary --month 2026-10`, with income 0, spending 90.51, the category totals, and the written recap with three tips.*
+
+**Changes from Stage 1.** No change. The figures match the categorized transactions, and the recap uses only those figures.
+
+### F11 Savings Goals and AI Saving Plan
+
+**Original requirement (Stage 1):** The user creates savings goals (name, target, deadline) and logs contributions. When asked, the agent looks at recent spending through its tools and suggests a plan: how much to save per month and which spending to cut. Errors: a non-positive target or a past deadline is a validation error, a reached goal needs no plan, and an unavailable LLM shows only the required amount per month.
+
+**How it is implemented.** `BudgetsGoalsController` (GUI) and `budgetbuddy goal` (CLI) call `BudgetBuddyFacade`, which uses `GoalService` to save goals and contributions through `GoalRepository`. `generateSavingPlan()` loads the goal and calls `BudgetBuddyAgent.proposeSavingPlan()`, which clears memory and runs the agent with `GoalsTool` and `SpendingTool`. If no usable plan comes back, the app shows the required monthly amount. Patterns: Command, Adapter, and Facade.
+
+**Screenshots.**
+
+![Figure 16: CLI goal and plan](../f11-cli-plan.png)
+
+*Figure 16. The goal `NewCar` is saved as goal 1 with a target of 1000.00 and a deadline of 2026-12-31. The plan reports 1000.00 per month for the run from November 23, 2026 to December 31, 2026.*
+
+**Changes from Stage 1.** The required monthly amount counts whole months from the current month to the deadline month, and the current month is not counted. This run was made on November 23, 2026 with a deadline of December 31, 2026, so only December counts and the full target is the monthly figure. A later deadline gives a lower figure, for example about $142.86 per month for June 30, 2027. Contributions are added in the GUI only, and the plan can be incomplete on some runs (Section 1).
 
 # 3. Implemented Design Patterns
 
