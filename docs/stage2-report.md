@@ -557,7 +557,7 @@ Commits `fdaf5c5` and `66c3e98` (Section 5, items 4 and 5) were made after the p
 
 # 7. Demonstration Index
 
-Each feature has its own video. Both the GUI and the CLI are shown across the set.All links are shared publicly on Google Drive, and no API keys or credentials appear in the recordings.
+Each feature has its own video. Both the GUI and the CLI are shown across the set. All links are shared publicly on Google Drive, and no API keys or credentials appear in the recordings.
 
 | Feature | Interface shown | Video |
 |---|---|---|
