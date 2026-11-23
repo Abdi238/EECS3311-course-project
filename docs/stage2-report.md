@@ -60,6 +60,44 @@ Stage 1 details are in `docs/Stage1_Report.md`. All features keep their Stage 1 
 - **F10, monthly summary (hybrid).** `AnalyticsService.generateMonthlySummary()` computes the figures with `buildMonthlyStats()`. `BudgetBuddyAgent.writeMonthlySummary()` asks the LLM for the written recap, using `PromptBuilder`. `InsightsController` shows the result.
 - **F11, savings goals and AI plan (hybrid).** `BudgetsGoalsController` calls the facade, which calls `GoalService` to create goals and add contributions through `GoalRepository`. `generateSavingPlan()` runs the agent with `GoalsTool` and `SpendingTool`. If the agent does not return a usable plan, the app shows a fallback plan with the required monthly amount.
 
+## 2.1 Feature walkthrough: F01 Import transactions
+
+**Original requirement (Stage 1, F01 Import Transactions):** Loads a bank CSV export into the app. Each bank uses different columns and date formats, so the importer knows the layout for TD and RBC exports. Any other bank can be imported by saving its export as a generic CSV with date, description, and amount columns. Input: a CSV file and its format. Output: saved transactions, a refreshed table, and a summary (imported, duplicates skipped, bad rows). Expected workflow: read rows, convert each to a transaction, skip duplicates, categorize (F02), save, and recheck budgets (F05). Errors: an unreadable file shows an error, mismatched columns ask for another format, and bad rows are skipped and listed in the summary.
+
+**How it is implemented.** The user picks a bank CSV layout (TD, RBC, or GENERIC) and a file. The GUI (`TransactionsController`) and the CLI (`budgetbuddy import`) both call `BudgetBuddyFacade.importTransactions()`. `ImportService` converts each row with `parseRow()` using the chosen layout, and rows already in the database are skipped. New rows go through `CategorizationService`, and `TransactionRepository` saves them. The facade then asks `BudgetService` to recheck budgets. Patterns: Facade and MVC.
+
+**Screenshots.**
+
+![Figure 1: The Import bank CSV dialog with the GENERIC layout and generic-sample.csv selected](screenshots/f01-gui-import-dialog.png)
+
+*Figure 1. The Import bank CSV dialog, with the GENERIC layout selected and `samples/generic-sample.csv` chosen.*
+
+![Figure 2: The Transactions tab after importing generic-sample.csv](screenshots/f01-gui-result.png)
+
+*Figure 2. The Transactions tab after the import. The banner reports five imported transactions. Category shows UNCATEGORIZED because Auto-Categorize (F02) has not run yet.*
+
+![Figure 3: CLI output from the F01 import command](screenshots/f01-cli-import.png)
+
+*Figure 3. The F01 import from the command line. The command `import samples/generic-sample.csv --bank GENERIC` reports five transactions imported from the same file.*
+
+**Changes from Stage 1.** None. F01 keeps its Stage 1 design (Section 4, item 1).
+
+## 2.2 Feature walkthrough: F11 Savings Goals and AI Saving Plan
+
+**Original requirement (Stage 1, F11):** The user creates savings goals (name, target, deadline) and logs contributions. When asked, the agent looks at recent spending through its tools and suggests a plan: how much to save per month and which spending to cut. Input: goal details, contribution amounts, and a goal ID for a plan. Output: the goal with progress, and a plan with a monthly target, three to five suggestions, and whether the goal is realistic. Expected workflow: save the goal, start the agent with a planning prompt on request, let the LLM call `SpendingTool`, then display the plan. Errors: a target that is not positive or a deadline in the past is a validation error, a reached goal needs no plan, and if the LLM is unavailable only the required monthly amount is shown.
+
+**How it is implemented.** `BudgetsGoalsController` (GUI) and `budgetbuddy goal` (CLI) call `BudgetBuddyFacade`, which uses `GoalService` to save goals and contributions through `GoalRepository`. `generateSavingPlan()` loads the goal and calls `BudgetBuddyAgent.proposeSavingPlan()`, which clears conversation memory and runs the agent with `GoalsTool` and `SpendingTool`. If the agent does not return a usable plan, the app shows the required monthly amount instead. Patterns: Command, Adapter, and Facade.
+
+**How the required monthly amount is calculated.** `SavingsGoal.requiredPerMonth()` divides the remaining amount by the number of whole months from the current month to the deadline month. The current month is not counted. This run was made on November 23, 2026, with a deadline of December 31, 2026. Only December is counted, so the full $1,000.00 target is the required amount per month. The figure is high because the deadline is about five weeks away. A later deadline would give a lower figure, for example about $142.86 per month for a deadline of June 30, 2027.
+
+**Screenshots.**
+
+![Figure 10: CLI output for the goal add and goal plan commands](screenshots/f11-cli-plan.png)
+
+*Figure 10. The goal `NewCar` is saved as goal 1, with a target of 1000.00 and a deadline of 2026-12-31. The plan reports a required amount of 1000.00 per month for the run from November 23, 2026 to December 31, 2026.*
+
+**Changes from Stage 1.** The plan has no separate contribution command in the CLI. Contributions are added in the GUI only. The plan can still be incomplete on some runs, and then the app shows the required amount (Section 1). The AI text may include suggestions that do not fit a short deadline, such as automatic transfers, so the plan is informational only.
+
 # 3. Implemented Design Patterns
 
 The application implements six patterns. The requirement is five.
