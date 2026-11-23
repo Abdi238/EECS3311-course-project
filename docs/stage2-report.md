@@ -557,14 +557,14 @@ Commits `fdaf5c5` and `66c3e98` (Section 5, items 4 and 5) were made after the p
 
 # 7. Demonstration Index
 
-Each feature has its own video. Both the GUI and the CLI are shown across the set. F04 is demonstrated in the GUI only. All links are shared publicly on Google Drive, and no API keys or credentials appear in the recordings.
+Each feature has its own video. Both the GUI and the CLI are shown across the set.All links are shared publicly on Google Drive, and no API keys or credentials appear in the recordings.
 
 | Feature | Interface shown | Video |
 |---|---|---|
 | F01 Import transactions | GUI and CLI | [F01 video](https://drive.google.com/file/d/1edJRtekiVCy1tNSHZtkapC8zIw6ISOwF/view?usp=drive_link) |
 | F02 AI auto-categorization | GUI and CLI | [F02 GUI video](https://drive.google.com/file/d/1mmB7g29cfgacoRwTIsPxu5ploezEjeQd/view?usp=drive_link), [F02 CLI video](https://drive.google.com/file/d/1IuBSHHc4pOLSCaFGiYHFq1yBoOFRcMsQ/view?usp=sharing) |
 | F03 Category correction and learning | GUI and CLI | [F03 GUI video](https://drive.google.com/file/d/1VnK_T5DSReParZvzGUhb4vScgT2HXuUe/view?usp=drive_link), [F03 CLI video](https://drive.google.com/file/d/11m6AwW-Cr7p3oinZLpvCZepA4Qf4BWo3/view?usp=sharing) |
-| F04 Budget management | GUI | [F04 video](https://drive.google.com/file/d/12HoTtHiatxse6n-DuCJNfGgts0wKkDm8/view?usp=drive_link) |
+| F04 Budget management | GUI and CLI | [F04 video](https://drive.google.com/file/d/12HoTtHiatxse6n-DuCJNfGgts0wKkDm8/view?usp=drive_link) |
 | F05 Budget tracking and alerts | GUI and CLI | [F05 video](https://drive.google.com/file/d/14fdMME_70fTajs-fI3orGKiu19BqT6aZ/view?usp=drive_link) |
 | F06 Spending trends | GUI and CLI | [F06 video](https://drive.google.com/file/d/1PRUUtAXOKR_kUGtTG6PhCdF67fk8r4co/view?usp=drive_link) |
 | F07 Recurring payments | GUI and CLI | [F07 video](https://drive.google.com/file/d/14EzGuTKlZy-7jtr5Va4UtqXCCS-VBy4W/view?usp=drive_link) |
