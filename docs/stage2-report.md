@@ -63,27 +63,27 @@ Stage 1 details are in `docs/Stage1_Report.md`. All features keep their Stage 1 
 
 ## 2.1 Feature walkthrough
 
-Each feature below states its Stage 1 requirement, how it is implemented, screenshots from the run, and any change from Stage 1. Screenshots were taken from the CLI and GUI runs listed in Section 7.
+Each feature below states its Stage 1 requirement, how it is implemented, screenshots from the run, and any change from Stage 1. GUI screenshots come first, followed by CLI screenshots. Figures are numbered in order across the section.
 
 ### F01 Import Transactions
 
 **Original requirement (Stage 1):** Loads a bank CSV export into the app. The importer knows the layout for TD and RBC exports, and any other bank can be imported as a generic CSV with date, description, and amount columns. Input: a CSV file and its format. Output: saved transactions, a refreshed table, and a summary of imported, duplicate, and bad rows. Errors: an unreadable file shows an error, mismatched columns ask for another format, and bad rows are skipped and listed.
 
-**How it is implemented.** The user picks a bank layout (TD, RBC, or GENERIC) and a file. The GUI (`TransactionsController`) and the CLI (`budgetbuddy import`) both call `BudgetBuddyFacade.importTransactions()`. `ImportService` converts each row with `parseRow()` using the chosen layout, and rows already in the database are skipped. `TransactionRepository` saves the new rows, and the facade asks `BudgetService` to recheck budgets. Patterns: Facade and MVC.
+**How it is implemented.** The user picks a bank layout (TD, RBC, or GENERIC) and a file. The GUI (`TransactionsController`) and the CLI (`budgetbuddy import`) both call `BudgetBuddyFacade.importTransactions()`. `ImportService` converts each row with `parseRow()` using the chosen layout, and rows already in the database are skipped. `TransactionRepository` saves the new rows as UNCATEGORIZED, and the facade asks `BudgetService` to recheck budgets. Patterns: Facade and MVC.
 
 **Screenshots.**
 
-![Figure 1: Import dialog](../f01-gui-import-dialog.png)
+![Figure 1: F01 Import Transactions](../f01-gui-import-dialog.png)
 
-*Figure 1. The Import bank CSV dialog, with the GENERIC layout selected and `samples/generic-sample.csv` chosen.*
+*Figure 1. The Import bank CSV dialog, with the GENERIC layout selected and `samples/generic-sample.csv` chosen. (GUI)*
 
-![Figure 2: Transactions tab after import](../f01-gui-result.png)
+![Figure 2: F01 Import Transactions](../f01-gui-result.png)
 
-*Figure 2. The Transactions tab after the import. The banner reports five imported transactions, and each Category shows UNCATEGORIZED until categorization runs (F02).*
+*Figure 2. The Transactions tab after the import. The banner reports five imported transactions, and each category shows UNCATEGORIZED until categorization runs (F02). (GUI)*
 
-![Figure 3: CLI import output](../f01-cli-import.png)
+![Figure 3: F01 Import Transactions](../f01-cli-import.png)
 
-*Figure 3. The F01 import from the command line, reporting five transactions imported from `generic-sample.csv`.*
+*Figure 3. The F01 import from the command line, reporting five transactions imported from `generic-sample.csv`. (CLI)*
 
 **Changes from Stage 1.** Stage 1 runs categorization automatically after import. The implementation saves imported rows as UNCATEGORIZED, and categorization runs as a separate step (`categorize` in the CLI, Auto-Categorize in the GUI). Impact: imported rows show UNCATEGORIZED until that step runs.
 
@@ -95,11 +95,15 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 4: CLI categorize output](../f02-cli-categorize.png)
+![Figure 4: F02 AI Auto-Categorization](../f02-gui-categorized.png)
 
-*Figure 4. The `categorize` command on the five imported transactions, reporting five categorized.*
+*Figure 4. The Transactions tab after Auto-Categorize. The banner reads "Categorized 5 transaction(s)," and the rows show GROCERIES, DINING, and TRANSPORT. No rows are highlighted as low confidence in this run. (GUI)*
 
-**Changes from Stage 1.** Stage 1 asks for low-confidence results to be highlighted for review. The implementation keeps those transactions as UNCATEGORIZED and does not save a separate review flag.
+![Figure 5: F02 AI Auto-Categorization](../f02-cli-categorize.png)
+
+*Figure 5. The `categorize` command on the five imported transactions, reporting five categorized. (CLI)*
+
+**Changes from Stage 1.** Stage 1 asks for low-confidence results to be highlighted for review. The implementation keeps those transactions as UNCATEGORIZED and does not save a separate review flag, and no rows were highlighted in the run shown.
 
 ### F03 Category Correction and Learning
 
@@ -109,19 +113,27 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 5: Correction and summary before and after](../f03-cli-correction.png)
+![Figure 6: F03 Category Correction and Learning](../f03-gui-change-dialog.png)
 
-*Figure 5. The summary before the correction, then `recategorize 2 OTHER --remember` with its output, then the summary after. Campus Coffee Shop moves to OTHER, and its other unset transaction follows.*
+*Figure 6. The Change category dialog for a Sample Grocery Store row, with "remember this merchant" ticked. (GUI)*
 
-![Figure 6: New row imported and categorized](../f03-cli-new-row.png)
+![Figure 7: F03 Category Correction and Learning](../f03-gui-result.png)
 
-*Figure 6. A new Campus Coffee Shop row is imported and categorized after the rule was saved.*
+*Figure 7. The banner "Transaction 1 set to TRANSPORT. Remembered Sample Grocery Store." The second Sample Grocery Store row (22.00) also changed to TRANSPORT. (GUI)*
 
-![Figure 7: Summary after the new row](../f03-cli-summary-after.png)
+![Figure 8: F03 Category Correction and Learning](../f03-cli-correction.png)
 
-*Figure 7. The summary after the new row. OTHER totals 15.50, which is 11.00 plus the new 4.50, so the rule applied to the new transaction.*
+*Figure 8. The summary before the correction, then `recategorize 2 OTHER --remember` with its output, then the summary after. Campus Coffee Shop moves to OTHER, and its other unset transaction follows. (CLI)*
 
-**Changes from Stage 1.** No change in behaviour. The CLI reports the remembered merchant in its output, and the rule also updates other unset transactions from that merchant.
+![Figure 9: F03 Category Correction and Learning](../f03-cli-new-row.png)
+
+*Figure 9. A new Campus Coffee Shop row is imported and categorized after the rule was saved. (CLI)*
+
+![Figure 10: F03 Category Correction and Learning](../f03-cli-summary-after.png)
+
+*Figure 10. The summary after the new row. OTHER totals 15.50, which is 11.00 plus the new 4.50, so the rule applied to the new transaction. (CLI)*
+
+**Changes from Stage 1.** No change in behaviour. The rule also updates other unset transactions from the same merchant, in both interfaces.
 
 ### F04 Budget Management
 
@@ -131,9 +143,13 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 8: CLI budget set, status, and invalid amount](../f04-cli-budget.png)
+![Figure 11: F04 Budget Management](../f04-gui-budget.png)
 
-*Figure 8. `budget set GROCERIES 100.00`, then `budget status`, then `budget set GROCERIES 120.00` replacing the limit, then an invalid amount that prints "Amount must be a number: abc."*
+*Figure 11. The Budgets & Goals tab after saving a DINING budget of 12 for 2026-10. The table shows spent 11.00, and the banner also shows the 91.7% warning from F05. (GUI)*
+
+![Figure 12: F04 Budget Management](../f04-cli-budget.png)
+
+*Figure 12. `budget set GROCERIES 100.00`, then `budget status`, then `budget set GROCERIES 120.00` replacing the limit, then an invalid amount that prints "Amount must be a number: abc." (CLI)*
 
 **Changes from Stage 1.** The CLI replaces an existing limit without asking for confirmation, which differs from the Stage 1 requirement for the GUI. The shown run confirms that a second `budget set` replaces the earlier limit.
 
@@ -141,15 +157,23 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Original requirement (Stage 1):** Shows how much of each budget has been used and raises an alert at 80% (warning) and 100% (exceeded), sent to whichever interface is running, using fixed templates so no LLM is needed. Errors: a category with spending but no budget shows "No budget set," and a level already alerted in the month is not alerted again.
 
-**How it is implemented.** After `BudgetService.recalculate()` totals the month's spending, any budget that reaches a new level notifies every registered `BudgetAlertListener`. `GuiBudgetAlertListener` and `BudgetBuddyCli` implement the interface, and the CLI prints the message. Patterns: Observer.
+**How it is implemented.** After `BudgetService.recalculate()` totals the month's spending, any budget that reaches a new level notifies every registered `BudgetAlertListener`. `GuiBudgetAlertListener` and `BudgetBuddyCli` implement the interface, and each shows the message in its own interface. Patterns: Observer.
 
 **Screenshots.**
 
-![Figure 9: CLI budget alerts](../f05-cli-alerts.png)
+![Figure 13: F05 Budget Tracking and Alerts](../f05-gui-import-new-row.png)
 
-*Figure 9. The warning "Dining budget at 91.7%" when the limit is set, then "Dining budget at 133.3%" after the over-budget row is categorized.*
+*Figure 13. After importing the over-budget file, the new 2026-10-09 Campus Coffee Shop row shows UNCATEGORIZED. (GUI)*
 
-**Changes from Stage 1.** Stage 1 says alerts follow an import, a correction, or a budget change. The run shows the alert also follows the `categorize` command, so that command is one of the triggers.
+![Figure 14: F05 Budget Tracking and Alerts](../f05-gui-alert.png)
+
+*Figure 14. After Auto-Categorize, the banner reads "Categorized 1 transaction(s). Dining budget at 133.3%," and the row is now DINING. (GUI)*
+
+![Figure 15: F05 Budget Tracking and Alerts](../f05-cli-alerts.png)
+
+*Figure 15. The warning "Dining budget at 91.7%" when the limit is set, then "Dining budget at 133.3%" after the over-budget row is categorized. (CLI)*
+
+**Changes from Stage 1.** Stage 1 says alerts follow an import, a correction, or a budget change. Both interfaces also raise the alert after the categorize step, so that step is one of the triggers.
 
 ### F06 Spending Trends and Charts
 
@@ -159,11 +183,15 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 10: CLI trends output](../f06-cli-trends.png)
+![Figure 16: F06 Spending Trends and Charts](../f06-gui-trends.png)
 
-*Figure 10. `trends --from 2026-10 --to 2026-10`, showing October 2026 with zero income and total spending of 95.51.*
+*Figure 16. The Insights tab with the spending trend for 2026-10, showing income 0 and spent 95.51, in a table. (GUI)*
 
-**Changes from Stage 1.** The CLI prints one line per month with income and spending. It does not print the month-over-month change column that Stage 1 describes for the table. The charts are in the GUI only.
+![Figure 17: F06 Spending Trends and Charts](../f06-cli-trends.png)
+
+*Figure 17. `trends --from 2026-10 --to 2026-10`, showing October 2026 with zero income and total spending of 95.51. (CLI)*
+
+**Changes from Stage 1.** The implementation shows a table of income and spending per month in both interfaces. It does not show the pie or bar charts that Stage 1 describes, and the table has no month-over-month change column.
 
 ### F07 Recurring Payment Detection
 
@@ -173,11 +201,23 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 11: CLI recurring output](../f07-cli-recurring.png)
+![Figure 18: F07 Recurring Payment Detection](../f07-gui-import.png)
 
-*Figure 11. `recurring` lists Streamline Music at 12.99, monthly, with the next expected date of 2026-11-10 and the subscription flag set to true.*
+*Figure 18. The import of three Streamline Music rows, all UNCATEGORIZED. (GUI)*
 
-**Changes from Stage 1.** In this run the output shows the merchant name as the label, not a separate readable name. The report does not claim an LLM label for this run, and the AI labelling depends on the API key being set.
+![Figure 19: F07 Recurring Payment Detection](../f07-gui-categorized.png)
+
+*Figure 19. After Auto-Categorize, the three Streamline Music rows show SUBSCRIPTIONS. The rules hold no entry for this merchant, so the AI step assigned the category. (GUI)*
+
+![Figure 20: F07 Recurring Payment Detection](../f07-gui-recurring.png)
+
+*Figure 20. The Recurring table after Scan lists Streamline Music at 12.99, monthly, with the next expected date of 2026-11-10 and the subscription flag set to true. (GUI)*
+
+![Figure 21: F07 Recurring Payment Detection](../f07-cli-recurring.png)
+
+*Figure 21. `recurring` lists Streamline Music at 12.99, monthly, with the same next date and subscription flag. (CLI)*
+
+**Changes from Stage 1.** The API key was set for these runs, so the labelling step ran. In these runs the readable name matched the merchant name, so the label did not change the name shown.
 
 ### F08 Unusual Expense Detection
 
@@ -187,11 +227,23 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 12: CLI unusual output](../f08-cli-unusual.png)
+![Figure 22: F08 Unusual Expense Detection](../f08-gui-import.png)
 
-*Figure 12. `unusual --month 2026-10` flags Laptop Repair Centre at 240.00 with the reason "New merchant over $200."*
+*Figure 22. The import of the Laptop Repair Centre row (240.00), UNCATEGORIZED. (GUI)*
 
-**Changes from Stage 1.** The explanation in this run is the reason text for the rule that flagged the item. The report does not claim a separate LLM explanation for this run.
+![Figure 23: F08 Unusual Expense Detection](../f08-gui-categorized.png)
+
+*Figure 23. After Auto-Categorize, the row shows OTHER. (GUI)*
+
+![Figure 24: F08 Unusual Expense Detection](../f08-gui-unusual.png)
+
+*Figure 24. The Unusual expenses table for 2026-10 flags Laptop Repair Centre at 240.00 with the reason "New merchant over $200." The explanation column is truncated on screen. (GUI)*
+
+![Figure 25: F08 Unusual Expense Detection](../f08-cli-unusual.png)
+
+*Figure 25. `unusual --month 2026-10` flags Laptop Repair Centre at 240.00 with the same reason and explanation. (CLI)*
+
+**Changes from Stage 1.** The API key was set for these runs, so the explanation step ran with the key. The explanation explains why the item was flagged.
 
 ### F09 Ask Budget Buddy
 
@@ -201,15 +253,23 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 13: CLI ask answer](../f09-cli-ask.png)
+![Figure 26: F09 Ask Budget Buddy](../f09-gui-ask.png)
 
-*Figure 13. The `ask` command answering a question about October spending, with the tools used listed below the answer. The answer also names the wrong year for part of the text (see Section 1).*
+*Figure 26. The Ask tab answering "How much did I spend in October?" with a breakdown for October 2026. The total of 348.50 matches the categories shown. The tools line lists SpendingTool. (GUI)*
 
-![Figure 14: CLI ask offline](../f09-cli-ask-offline.png)
+![Figure 27: F09 Ask Budget Buddy](../f09-gui-ask-year-error.png)
 
-*Figure 14. With `.env` renamed so no key is loaded, the same command prints "assistant offline."*
+*Figure 27. The same question asked again, in which the answer names October 2024 and lists the months with data. This run did not give a total. It shows the limitation described in Section 1. (GUI)*
 
-**Changes from Stage 1.** The answer can name the wrong year. In the shown run it mentions October 2024 while reporting October 2026, which is a limitation of the current prompt. The offline path matches the Stage 1 requirement.
+![Figure 28: F09 Ask Budget Buddy](../f09-cli-ask.png)
+
+*Figure 28. The `ask` command answering a question about October spending, with the tools used listed below the answer. This run also names the wrong year in part of the text. (CLI)*
+
+![Figure 29: F09 Ask Budget Buddy](../f09-cli-ask-offline.png)
+
+*Figure 29. With `.env` renamed so no key is loaded, the same command prints "assistant offline." (CLI)*
+
+**Changes from Stage 1.** The answers can vary between runs. The same question gave a correct October 2026 breakdown in one run and named October 2024 in another. The current prompt does not include today's date, which is the likely cause (Section 1). The offline path matches the Stage 1 requirement.
 
 ### F10 Monthly Summary
 
@@ -219,9 +279,13 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 15: CLI summary](../f10-cli-summary.png)
+![Figure 30: F10 Monthly Summary](../f10-gui-summary.png)
 
-*Figure 15. `summary --month 2026-10`, with income 0, spending 90.51, the category totals, and the written recap with three tips.*
+*Figure 30. The Insights tab's Summary for 2026-10. The stats show income 0 and spent 348.50, with the category totals and the Dining budget of 12 against 16.00 spent. The recap gives three saving tips. (GUI)*
+
+![Figure 31: F10 Monthly Summary](../f10-cli-summary.png)
+
+*Figure 31. `summary --month 2026-10` with income 0 and spending of 90.51, the category totals, and the written recap with three tips. This run shows no Subscriptions or Other rows, so its total is lower than the 348.50 in the GUI run (Figure 30). (CLI)*
 
 **Changes from Stage 1.** No change. The figures match the categorized transactions, and the recap uses only those figures.
 
@@ -233,11 +297,23 @@ Each feature below states its Stage 1 requirement, how it is implemented, screen
 
 **Screenshots.**
 
-![Figure 16: CLI goal and plan](../f11-cli-plan.png)
+![Figure 32: F11 Savings Goals and AI Saving Plan](../f11-gui-contribution.png)
 
-*Figure 16. The goal `NewCar` is saved as goal 1 with a target of 1000.00 and a deadline of 2026-12-31. The plan reports 1000.00 per month for the run from November 23, 2026 to December 31, 2026.*
+*Figure 32. A contribution of 100.00 added to the NewCar goal. The banner reads "Contribution saved. NewCar now has 100," and the Goals table shows Saved 100. (GUI)*
 
-**Changes from Stage 1.** The required monthly amount counts whole months from the current month to the deadline month, and the current month is not counted. This run was made on November 23, 2026 with a deadline of December 31, 2026, so only December counts and the full target is the monthly figure. A later deadline gives a lower figure, for example about $142.86 per month for June 30, 2027. Contributions are added in the GUI only, and the plan can be incomplete on some runs (Section 1).
+![Figure 33: F11 Savings Goals and AI Saving Plan](../f11-gui-plan-iphone18-2026.png)
+
+*Figure 33. The saving plan for the Iphone 18 goal (target 1000, saved 450, deadline 2026-12-31). The monthly target is 550 for November 2026, which is the 1000 target less 450 saved, over the one month left. (GUI)*
+
+![Figure 34: F11 Savings Goals and AI Saving Plan](../f11-gui-plan-newcar-2027.png)
+
+*Figure 34. The saving plan for the NewCar goal (target 1000, saved 100, deadline 2027-12-31). The monthly target is 69.23, which is the 900 left over 13 months from November 2026 to December 2027. The banner "Choose a savings goal." is stale and remains from the earlier selection. (GUI)*
+
+![Figure 35: F11 Savings Goals and AI Saving Plan](../f11-cli-plan.png)
+
+*Figure 35. The CLI run from November 23, 2026 to December 31, 2026. The goal NewCar is saved as goal 1 with a target of 1000.00 and a deadline of 2026-12-31, and the plan reports 1000.00 per month, because only December is counted. (CLI)*
+
+**Changes from Stage 1.** The required monthly amount counts whole months from the current month to the deadline month, and the current month is not counted. With a deadline of December 31, 2026, only December counts, so the full target is the monthly figure, as in the CLI run. A later deadline lowers the figure, as in the 2027 NewCar goal. Contributions are added in the GUI only. The plan can be incomplete on some runs (Section 1), and a stale banner can remain on screen after a plan opens.
 
 # 3. Implemented Design Patterns
 
